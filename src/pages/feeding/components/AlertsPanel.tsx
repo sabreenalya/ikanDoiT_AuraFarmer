@@ -10,9 +10,9 @@ interface AlertsPanelProps {
 }
 
 const SEVERITY_STYLE = {
-  info:     { bg: "bg-blue-50 border-blue-200",   text: "text-blue-700",  dot: "bg-blue-500",   label: "Reminder" },
-  warning:  { bg: "bg-amber-50 border-amber-200", text: "text-amber-700", dot: "bg-amber-400",  label: "Action Required" },
-  critical: { bg: "bg-red-50 border-red-200",     text: "text-red-700",   dot: "bg-red-500",    label: "Feeding Overdue" },
+  info:     { bg: "bg-blue-50 border-blue-200",   text: "text-blue-700",  dot: "bg-blue-500",   label: "Info" },
+  warning:  { bg: "bg-amber-50 border-amber-200", text: "text-amber-700", dot: "bg-amber-400",  label: "Warning" },
+  critical: { bg: "bg-red-50 border-red-200",     text: "text-red-700",   dot: "bg-red-500",    label: "Critical" },
 };
 
 export default function AlertsPanel({ alerts, onDismiss, onAlertClick }: AlertsPanelProps) {

@@ -26,7 +26,7 @@ export default function BiomassStatusCard({
 }: BiomassStatusCardProps) {
   return (
     <div
-      className={`rounded-2xl border p-4 transition-shadow hover:shadow-md ${
+      className={`rounded-2xl border p-4 ${
         isStale
           ? "bg-amber-50 border-amber-200"
           : "bg-gradient-to-br from-[#0B3D91]/5 to-[#0288D1]/5 border-blue-100"
@@ -56,7 +56,7 @@ export default function BiomassStatusCard({
               </div>
             </>
           ) : (
-            <p className="text-sm text-slate-500">No biomass data yet. Add data to generate feeding recommendations.</p>
+            <p className="text-sm text-slate-500">No biomass data found</p>
           )}
         </div>
 

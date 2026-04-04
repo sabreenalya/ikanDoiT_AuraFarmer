@@ -137,7 +137,7 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
       <div className="grid md:grid-cols-2 gap-5">
 
         {/* LEFT — Parameters */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 transition-shadow hover:shadow-md">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
           <h3
             className="font-semibold text-slate-700 mb-4"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
@@ -278,10 +278,10 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
               return (
                 <div
                   key={slot.id}
-                  className={`flex items-center justify-between bg-white rounded-xl px-4 py-3 border transition-all hover:shadow-md ${
+                  className={`flex items-center justify-between bg-white rounded-xl px-4 py-3 border transition-all ${
                     slot.status === "done"    ? "border-emerald-200 opacity-80"
                     : slot.status === "missed" ? "border-red-200 bg-red-50"
-                    : isNext                   ? "border-blue-300 ring-2 ring-blue-200 bg-blue-50/30 shadow-sm"
+                    : isNext                   ? "border-amber-300 ring-2 ring-amber-200"
                     : "border-emerald-100"
                   }`}
                 >
@@ -300,9 +300,9 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm text-slate-800">{slot.time}</span>
-                      {isNext && (
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
-                            🔔 Next Feed
+                        {isNext && (
+                          <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">
+                            Next
                           </span>
                         )}
                       </div>
@@ -310,38 +310,23 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <p className={`font-bold text-sm ${
-                        slot.status === "done"    ? "text-emerald-600"
-                        : slot.status === "missed" ? "text-red-500"
-                        : "text-slate-700"
-                      }`}>
-                        {slot.amount} kg
-                      </p>
-                      {slot.status === "done" && slot.actualAmount !== undefined && (
-                        <p className="text-xs text-slate-400">actual: {slot.actualAmount} kg</p>
-                      )}
-                      {slot.fishResponse && (
-                        <p className="text-xs text-slate-400">
-                          {slot.fishResponse === "finished"  ? "🐟 Finished"
-                           : slot.fishResponse === "leftover" ? "🍽 Leftover"
-                           : "😴 Not eating"}
-                        </p>
-                      )}
-                    </div>
-                    {slot.status === "pending" && (
-                      <button
-                        onClick={() => setActiveChecklistItem(slot)}
-                        className="text-xs font-semibold text-white bg-[#0B3D91] hover:bg-[#1565C0] px-3 py-1.5 rounded-lg transition-all shadow-sm whitespace-nowrap"
-                      >
-                        Mark as Done
-                      </button>
+                  <div className="text-right">
+                    <p className={`font-bold text-sm ${
+                      slot.status === "done"    ? "text-emerald-600"
+                      : slot.status === "missed" ? "text-red-500"
+                      : "text-slate-700"
+                    }`}>
+                      {slot.amount} kg
+                    </p>
+                    {slot.status === "done" && slot.actualAmount !== undefined && (
+                      <p className="text-xs text-slate-400">actual: {slot.actualAmount} kg</p>
                     )}
-                    {slot.status === "done" && (
-                      <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg">
-                        ✅ Done
-                      </span>
+                    {slot.fishResponse && (
+                      <p className="text-xs text-slate-400">
+                        {slot.fishResponse === "finished"  ? "🐟 Finished"
+                         : slot.fishResponse === "leftover" ? "🍽 Leftover"
+                         : "😴 Not eating"}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -364,7 +349,7 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
       />
 
       {/* 7-day history chart */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 transition-shadow hover:shadow-md">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
         <div className="flex items-center justify-between mb-1">
           <h3
             className="font-semibold text-slate-700 text-sm"
@@ -402,7 +387,7 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
       </div>
 
       {/* Log table */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 transition-shadow hover:shadow-md">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
         <h3
           className="font-semibold text-slate-700 mb-4"
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
