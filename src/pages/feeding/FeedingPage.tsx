@@ -278,10 +278,10 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
               return (
                 <div
                   key={slot.id}
-                  className={`flex items-center justify-between bg-white rounded-xl px-4 py-3 border transition-all ${
+                  className={`flex items-center justify-between bg-white rounded-xl px-4 py-3 border transition-all hover:shadow-md ${
                     slot.status === "done"    ? "border-emerald-200 opacity-80"
                     : slot.status === "missed" ? "border-red-200 bg-red-50"
-                    : isNext                   ? "border-amber-300 ring-2 ring-amber-200"
+                    : isNext                   ? "border-blue-300 ring-2 ring-blue-200 bg-blue-50/30 shadow-sm"
                     : "border-emerald-100"
                   }`}
                 >
