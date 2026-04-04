@@ -56,7 +56,7 @@ export default function BiomassStatusCard({
               </div>
             </>
           ) : (
-            <p className="text-sm text-slate-500">No biomass data found</p>
+            <p className="text-sm text-slate-500">No biomass data yet. Add data to generate feeding recommendations.</p>
           )}
         </div>
 
