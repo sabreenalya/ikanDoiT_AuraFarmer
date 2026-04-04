@@ -349,7 +349,7 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
       />
 
       {/* 7-day history chart */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 transition-shadow hover:shadow-md">
         <div className="flex items-center justify-between mb-1">
           <h3
             className="font-semibold text-slate-700 text-sm"
