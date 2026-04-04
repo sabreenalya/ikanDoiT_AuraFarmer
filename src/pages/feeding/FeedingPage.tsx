@@ -310,23 +310,38 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <p className={`font-bold text-sm ${
-                      slot.status === "done"    ? "text-emerald-600"
-                      : slot.status === "missed" ? "text-red-500"
-                      : "text-slate-700"
-                    }`}>
-                      {slot.amount} kg
-                    </p>
-                    {slot.status === "done" && slot.actualAmount !== undefined && (
-                      <p className="text-xs text-slate-400">actual: {slot.actualAmount} kg</p>
-                    )}
-                    {slot.fishResponse && (
-                      <p className="text-xs text-slate-400">
-                        {slot.fishResponse === "finished"  ? "🐟 Finished"
-                         : slot.fishResponse === "leftover" ? "🍽 Leftover"
-                         : "😴 Not eating"}
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className={`font-bold text-sm ${
+                        slot.status === "done"    ? "text-emerald-600"
+                        : slot.status === "missed" ? "text-red-500"
+                        : "text-slate-700"
+                      }`}>
+                        {slot.amount} kg
                       </p>
+                      {slot.status === "done" && slot.actualAmount !== undefined && (
+                        <p className="text-xs text-slate-400">actual: {slot.actualAmount} kg</p>
+                      )}
+                      {slot.fishResponse && (
+                        <p className="text-xs text-slate-400">
+                          {slot.fishResponse === "finished"  ? "🐟 Finished"
+                           : slot.fishResponse === "leftover" ? "🍽 Leftover"
+                           : "😴 Not eating"}
+                        </p>
+                      )}
+                    </div>
+                    {slot.status === "pending" && (
+                      <button
+                        onClick={() => setActiveChecklistItem(slot)}
+                        className="text-xs font-semibold text-white bg-[#0B3D91] hover:bg-[#1565C0] px-3 py-1.5 rounded-lg transition-all shadow-sm whitespace-nowrap"
+                      >
+                        Mark as Done
+                      </button>
+                    )}
+                    {slot.status === "done" && (
+                      <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg">
+                        ✅ Done
+                      </span>
                     )}
                   </div>
                 </div>
