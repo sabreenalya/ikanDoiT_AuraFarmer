@@ -222,7 +222,7 @@ export function generateAlerts(
         id: `missed-${item.id}`,
         type: "missed",
         severity: "critical",
-        message: `🚨 Missed feeding: ${item.label} at ${item.time} — log it now`,
+        message: `⏰ Feeding Overdue: ${item.label} at ${item.time} — please log it now`,
         triggeredAt: now,
         dismissed: false,
       });

@@ -179,7 +179,7 @@ export default function FeedingChecklist({ items, onComplete, activeItem, onChan
   const progress = items.length > 0 ? Math.round((doneCount / items.length) * 100) : 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 transition-shadow hover:shadow-md">
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <h3

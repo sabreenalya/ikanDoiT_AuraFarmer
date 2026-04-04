@@ -137,7 +137,7 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
       <div className="grid md:grid-cols-2 gap-5">
 
         {/* LEFT — Parameters */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 transition-shadow hover:shadow-md">
           <h3
             className="font-semibold text-slate-700 mb-4"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
