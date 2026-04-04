@@ -300,9 +300,9 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm text-slate-800">{slot.time}</span>
-                        {isNext && (
-                          <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">
-                            Next
+                      {isNext && (
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold animate-pulse">
+                            🔔 Next Feed
                           </span>
                         )}
                       </div>
