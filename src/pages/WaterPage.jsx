@@ -389,7 +389,7 @@ export default function WaterPage({ user, params: globalParams, setParams, conne
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Water Quality Monitoring</h2>
+          <h2 className="text-xl font-bold text-slate-800" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Real-Time Water Quality Monitoring</h2>
           <p className="text-slate-500 text-sm mt-0.5">Live readings from your pond sensors</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -680,33 +680,6 @@ export default function WaterPage({ user, params: globalParams, setParams, conne
                 </>
               );
             })()}
-          </div>
-        </div>
-      </Card>
-
-      {/* Info footer */}
-      <Card className="p-5 bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-100">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-[#0B3D91]/10 flex items-center justify-center flex-shrink-0">
-            <svg className="w-7 h-7 text-[#0B3D91]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-          </div>
-          <div className="flex-1">
-            <h3 className="font-bold text-slate-900 mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Real-Time Monitoring Active</h3>
-            <p className="text-sm text-slate-600 leading-relaxed mb-3">Your sensor kit is measuring water quality every 30 seconds. All readings are saved automatically.</p>
-            <div className="flex flex-wrap gap-3 text-xs">
-              <div className="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-lg border border-emerald-200">
-                <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span className="font-semibold text-slate-700">{devices.length} Pond{devices.length > 1 ? "s" : ""} Connected</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-lg border border-purple-200">
-                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                <span className="font-semibold text-slate-700">{aiPoweredByGemini ? "Gemini AI" : "AI"} Analysis On</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-lg border border-blue-200">
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span className="font-semibold text-slate-700">Updates every 30s</span>
-              </div>
-            </div>
           </div>
         </div>
       </Card>
