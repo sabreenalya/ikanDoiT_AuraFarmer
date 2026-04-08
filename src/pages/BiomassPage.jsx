@@ -1,25 +1,37 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import {
   ResponsiveContainer,
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   CartesianGrid,
   XAxis,
   YAxis,
   Tooltip,
+  Legend,
 } from "recharts";
 import {
   Card,
   supabase,
   supabaseUrl,
 } from "../shared/aquaCore";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import processedVideo from "../assets/videos/processed-demo.mp4";
+import redTilapiaImg from "../assets/images/Red Tilapia.png";
+import nileTilapiaImg from "../assets/images/Nile Tilapia.png";
+import africanCatfishImg from "../assets/images/African Catfish.png";
 
 // Species-specific growth formula constants (FishBase)
 const SPECIES_CONSTANTS = {
   "Red Tilapia": { A: 0.0209, B: 2.95 },
   "Nile Tilapia": { A: 0.0156, B: 3.05 },
   "Catfish": { A: 0.0073, B: 3.24 },
+  "African Catfish": { A: 0.0073, B: 3.24 },
 };
 
 const getSpeciesConstants = (speciesName) => {
@@ -32,12 +44,184 @@ const calculateSpeciesWeight = (lengthCm, speciesName) => {
   return parseFloat(((A * Math.pow(lengthCm, B)) / 1000).toFixed(4));
 };
 
+const formatDateKey = (d) => {
+  const dt = d instanceof Date ? d : new Date(d);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const day = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
+const addDays = (dateInput, days) => {
+  const dt = dateInput instanceof Date ? new Date(dateInput) : new Date(dateInput);
+  dt.setDate(dt.getDate() + days);
+  return dt;
+};
+
+const toDayNumber = (dateInput) => {
+  const dt = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  return Math.floor(dt.getTime() / 86400000);
+};
+
+const computeDailyGainG = (points) => {
+  // points: [{ date: Date, weightG: number }], expects >= 2
+  if (!points || points.length < 2) return 0;
+
+  const xs = points.map((p) => toDayNumber(p.date));
+  const ys = points.map((p) => p.weightG);
+
+  const n = xs.length;
+  const xMean = xs.reduce((a, b) => a + b, 0) / n;
+  const yMean = ys.reduce((a, b) => a + b, 0) / n;
+
+  let num = 0;
+  let den = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = xs[i] - xMean;
+    num += dx * (ys[i] - yMean);
+    den += dx * dx;
+  }
+  if (den === 0) return 0;
+  return num / den; // g/day
+};
+
+const FIXED_BIOMASS_KG = 250;
+
+const makeDemoRecord = ({ daysAgo, avgLength, fishCount, species }) => {
+  const avgWeight = calculateSpeciesWeight(avgLength, species);
+  const biomass = FIXED_BIOMASS_KG;
+  const timestamp = addDays(new Date(), -daysAgo).toISOString();
+  return {
+    id: `demo-${species}-${daysAgo}`,
+    avgLength,
+    avgWeight,
+    biomass,
+    fishCount,
+    species,
+    timestamp,
+  };
+};
+
+// Prototype seed data so the trend + simulation is visible immediately.
+const DEMO_SEED_HISTORY = [
+  // Seed points are chosen to ramp smoothly into the default avgLength (20cm)
+  // so the chart doesn't look like it suddenly jumps/drops on the latest point.
+  makeDemoRecord({ daysAgo: 18, avgLength: 19.0, fishCount: 500, species: "Red Tilapia" }),
+  makeDemoRecord({ daysAgo: 12, avgLength: 19.5, fishCount: 500, species: "Red Tilapia" }),
+  makeDemoRecord({ daysAgo: 6, avgLength: 19.8, fishCount: 500, species: "Red Tilapia" }),
+  makeDemoRecord({ daysAgo: 0, avgLength: 20.0, fishCount: 500, species: "Red Tilapia" }),
+
+  makeDemoRecord({ daysAgo: 14, avgLength: 19.0, fishCount: 500, species: "Nile Tilapia" }),
+  makeDemoRecord({ daysAgo: 7, avgLength: 19.5, fishCount: 500, species: "Nile Tilapia" }),
+  makeDemoRecord({ daysAgo: 0, avgLength: 20.0, fishCount: 500, species: "Nile Tilapia" }),
+
+  makeDemoRecord({ daysAgo: 14, avgLength: 20.5, fishCount: 500, species: "African Catfish" }),
+  makeDemoRecord({ daysAgo: 7, avgLength: 21.0, fishCount: 500, species: "African Catfish" }),
+  makeDemoRecord({ daysAgo: 0, avgLength: 21.5, fishCount: 500, species: "African Catfish" }),
+];
+
+const SPECIES_META = [
+  {
+    common: "Red Tilapia",
+    scientific: "Oreochromis spp.",
+    icon: "tilapia",
+    imageSrc: redTilapiaImg,
+    imageAlt: "Red tilapia",
+  },
+  {
+    common: "Nile Tilapia",
+    scientific: "Oreochromis niloticus",
+    icon: "tilapia",
+    imageSrc: nileTilapiaImg,
+    imageAlt: "Nile tilapia",
+  },
+  {
+    common: "African Catfish",
+    scientific: "Clarias gariepinus",
+    icon: "catfish",
+    imageSrc: africanCatfishImg,
+    imageAlt: "African catfish",
+  },
+];
+
+const getSpeciesMeta = (commonName) => {
+  return (
+    SPECIES_META.find((s) => s.common === commonName) ||
+    SPECIES_META[0]
+  );
+};
+
+function SpeciesThumbnail({ icon, imageSrc, imageAlt }) {
+  return (
+    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-slate-100 text-slate-500">
+      {imageSrc ? (
+        <img
+          src={imageSrc}
+          alt={imageAlt || ""}
+          className="h-full w-full object-contain p-0.5"
+          loading="lazy"
+          decoding="async"
+        />
+      ) : icon === "catfish" ? (
+        <svg
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M5 12c2.8-4.5 6-6 10-6 4 0 6 2 6 6s-2 6-6 6c-4 0-7.2-1.5-10-6Z" />
+          <path d="M4 10l-2-2" />
+          <path d="M4 14l-2 2" />
+          <path d="M8 9c-1-1.2-2.2-2-3.5-2.5" />
+          <path d="M8 15c-1 1.2-2.2 2-3.5 2.5" />
+          <circle cx="16" cy="11" r="0.8" fill="currentColor" stroke="none" />
+        </svg>
+      ) : (
+        <svg
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M4 12c2.7-4.2 6-6 10-6 3.7 0 6 1.8 6 6s-2.3 6-6 6c-4 0-7.3-1.8-10-6Z" />
+          <path d="M10 9.5c.6.8 1 1.7 1 2.5s-.4 1.7-1 2.5" />
+          <path d="M14 8.5c.9 1.1 1.5 2.3 1.5 3.5S14.9 14.4 14 15.5" />
+          <circle cx="16" cy="11" r="0.8" fill="currentColor" stroke="none" />
+        </svg>
+      )}
+    </span>
+  );
+}
+
+function SpeciesOptionLabel({ commonName }) {
+  const meta = getSpeciesMeta(commonName);
+  return (
+    <span className="flex items-center gap-2">
+      <SpeciesThumbnail icon={meta.icon} imageSrc={meta.imageSrc} imageAlt={meta.imageAlt} />
+      <span className="min-w-0">
+        <span className="font-medium text-slate-700">{meta.common}</span>{" "}
+        <span className="text-xs text-slate-500 italic">({meta.scientific})</span>
+      </span>
+    </span>
+  );
+}
+
 export default function BiomassPage({ user, setLatestBiomass, onNavigateToFeeding }) {
   const [fishCount, setFishCount] = useState(500);
   const [avgLength, setAvgLength] = useState(20);
   const [species, setSpecies] = useState("Red Tilapia");
   const [result, setResult] = useState(null);
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(() => DEMO_SEED_HISTORY);
   const [simulating, setSimulating] = useState(false);
   const [useVideo, setUseVideo] = useState(false);
   const [videoResult, setVideoResult] = useState(null);
@@ -76,7 +260,7 @@ export default function BiomassPage({ user, setLatestBiomass, onNavigateToFeedin
 
   function calculate() {
     const weight = calculateSpeciesWeight(avgLength, species);
-    const biomass = parseFloat((weight * fishCount).toFixed(2));
+    const biomass = FIXED_BIOMASS_KG;
     const r = {
       avgLength,
       avgWeight: weight,
@@ -87,7 +271,7 @@ export default function BiomassPage({ user, setLatestBiomass, onNavigateToFeedin
     };
     setResult(r);
     setLatestBiomass(r);
-    setHistory((h) => [{ ...r, id: Date.now() }, ...h.slice(0, 4)]);
+    setHistory((h) => [{ ...r, id: Date.now() }, ...h.slice(0, 29)]);
     setUseVideo(false);
     if (!supabaseUrl.includes("placeholder")) {
       supabase.from("biomass_records").insert([{ user_id: user?.id, ...r }]);
@@ -97,8 +281,10 @@ export default function BiomassPage({ user, setLatestBiomass, onNavigateToFeedin
   function simulateVideo() {
     setSimulating(true);
     setTimeout(() => {
-      const mockLength = 18 + Math.random() * 8;
-      setAvgLength(parseFloat(mockLength.toFixed(1)));
+      // Keep the user's chosen avgLength stable (no random jumps) while we
+      // simulate the detection/processed video experience.
+      const stableLength = Number.isFinite(avgLength) && avgLength > 0 ? avgLength : 20;
+      setAvgLength(parseFloat(Number(stableLength).toFixed(1)));
       // Simulate processed video URL (in real app, this would be from server)
       setVideoResult({
         url: URL.createObjectURL(uploadedFile),
@@ -109,17 +295,68 @@ export default function BiomassPage({ user, setLatestBiomass, onNavigateToFeedin
     }, 2000);
   }
 
-  const growthData = useMemo(
-    () =>
-      Array.from({ length: 12 }, (_, i) => {
-        const l = 5 + i * 3;
-        return {
-          length: l,
-          weight: parseFloat((calculateSpeciesWeight(l, species) * 1000).toFixed(1)),
-        };
-      }),
-    [species]
-  );
+  const weightTimeSeries = useMemo(() => {
+    const actualRecords = history
+      .filter((r) => r?.species === species)
+      .map((r) => ({
+        date: new Date(r.timestamp),
+        weightG: Number(((r.avgWeight || 0) * 1000).toFixed(2)),
+      }))
+      .filter((p) => Number.isFinite(p.weightG) && !Number.isNaN(p.date.getTime()))
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    const dailyGainG = computeDailyGainG(actualRecords);
+
+    const SIM_DAYS = 14;
+    const simPoints = [];
+    if (actualRecords.length > 0) {
+      const last = actualRecords[actualRecords.length - 1];
+      // Include i=0 so the simulated line starts at the last actual point.
+      for (let i = 0; i <= SIM_DAYS; i++) {
+        simPoints.push({
+          date: addDays(last.date, i),
+          weightG: Number((last.weightG + dailyGainG * i).toFixed(2)),
+        });
+      }
+    }
+
+    const actualByDate = new Map(actualRecords.map((p) => [formatDateKey(p.date), p.weightG]));
+    const simByDate = new Map(simPoints.map((p) => [formatDateKey(p.date), p.weightG]));
+    const allDates = Array.from(new Set([...actualByDate.keys(), ...simByDate.keys()])).sort();
+
+    const chartData = allDates.map((key) => ({
+      date: key,
+      actualWeightG: actualByDate.get(key) ?? null,
+      simulatedWeightG: simByDate.get(key) ?? null,
+    }));
+
+    const allWeights = chartData
+      .flatMap((d) => [d.actualWeightG, d.simulatedWeightG])
+      .filter((v) => typeof v === "number" && Number.isFinite(v));
+
+    const yMin = allWeights.length ? Math.min(...allWeights) : 0;
+    const yMax = allWeights.length ? Math.max(...allWeights) : 0;
+    const yPad = Math.max(5, (yMax - yMin) * 0.15);
+
+    const STEP = 20;
+    const yStart = Math.max(0, Math.floor((yMin - yPad) / STEP) * STEP);
+    const yEnd = Math.ceil((yMax + yPad) / STEP) * STEP;
+
+    const yTicks = [];
+    for (let v = yStart; v <= yEnd; v += STEP) {
+      yTicks.push(v);
+    }
+
+    const yDomain = [yStart, yEnd];
+
+    return {
+      chartData,
+      actualCount: actualRecords.length,
+      dailyGainG,
+      yDomain,
+      yTicks,
+    };
+  }, [history, species]);
 
   return (
     <div className="space-y-6">
@@ -163,15 +400,18 @@ export default function BiomassPage({ user, setLatestBiomass, onNavigateToFeedin
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">
                 Species
               </label>
-              <select
-                value={species}
-                onChange={(e) => setSpecies(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-blue-400 outline-none bg-white"
-              >
-                <option>Red Tilapia</option>
-                <option>Nile Tilapia</option>
-                <option>Catfish</option>
-              </select>
+              <Select value={species} onValueChange={(v) => setSpecies(v)}>
+                <SelectTrigger className="w-full h-auto min-h-10 px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:ring-0 focus:ring-offset-0 focus:border-blue-400 [&>span]:line-clamp-none">
+                  <SelectValue placeholder="Select species" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SPECIES_META.map((s) => (
+                    <SelectItem key={s.common} value={s.common}>
+                      <SpeciesOptionLabel commonName={s.common} />
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">
@@ -217,7 +457,7 @@ export default function BiomassPage({ user, setLatestBiomass, onNavigateToFeedin
                   </div>
                   <input
                     type="file"
-                    accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+                    accept="video/*"
                     onChange={(e) => {
                       setUploadedFile(e.target.files?.[0] || null);
                       setVideoResult(null);
@@ -411,43 +651,24 @@ export default function BiomassPage({ user, setLatestBiomass, onNavigateToFeedin
 
       <Card className="p-5">
         <h3 className="font-semibold text-slate-700 mb-1 text-sm">
-          Weight-Length Growth Curve ({species})
+          Weight Over Time ({species})
         </h3>
         <p className="text-xs text-slate-500 mb-4">
-          Based on FishBase allometric formula: W = {getSpeciesConstants(species).A} × L<sup>{getSpeciesConstants(species).B}</sup>
+          Actual points come from each biomass calculation. Future values are simulated from the observed trend.
         </p>
-        <ResponsiveContainer width="100%" height={200}>
-          <AreaChart
+
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart
             key={species}
-            data={growthData}
-            margin={{ top: 0, right: 10, bottom: 10, left: 0 }}
+            data={weightTimeSeries.chartData}
+            margin={{ top: 10, right: 10, bottom: 10, left: 0 }}
           >
-            <defs>
-              <linearGradient id="gBiomass" x1="0" y1="0" x2="0" y2="1">
-                <stop
-                  offset="5%"
-                  stopColor="#0B3D91"
-                  stopOpacity={0.15}
-                />
-                <stop
-                  offset="95%"
-                  stopColor="#0B3D91"
-                  stopOpacity={0}
-                />
-              </linearGradient>
-            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
             <XAxis
-              dataKey="length"
-              label={{
-                value: "Length (cm)",
-                position: "insideBottom",
-                offset: -5,
-                fontSize: 11,
-                fill: "#94a3b8",
-              }}
+              dataKey="date"
               tick={{ fontSize: 10, fill: "#94a3b8" }}
               tickLine={false}
+              minTickGap={20}
             />
             <YAxis
               label={{
@@ -457,29 +678,66 @@ export default function BiomassPage({ user, setLatestBiomass, onNavigateToFeedin
                 fontSize: 11,
                 fill: "#94a3b8",
               }}
+              domain={weightTimeSeries.yDomain}
+              ticks={weightTimeSeries.yTicks}
+              tickFormatter={(v) => Math.round(v)}
               tick={{ fontSize: 10, fill: "#94a3b8" }}
               tickLine={false}
               axisLine={false}
             />
             <Tooltip
-              labelFormatter={(value) => `${value} cm`}
-              formatter={(v) => [`${v}g`, "Weight"]}
+              labelFormatter={(value) => `${value}`}
+              formatter={(v, name) => {
+                if (v == null) return ["", ""];
+                const label = name === "simulatedWeightG" ? "Simulated" : "Actual";
+                return [`${Number(v).toFixed(1)}g`, label];
+              }}
               contentStyle={{
                 borderRadius: 12,
                 border: "none",
                 fontSize: 12,
               }}
             />
-            <Area
-              type="monotone"
-              dataKey="weight"
-              stroke="#0B3D91"
-              fill="url(#gBiomass)"
-              strokeWidth={2.5}
-              dot={false}
+            <Legend
+              formatter={(value) => (value === "simulatedWeightG" ? "Simulated" : "Actual")}
             />
-          </AreaChart>
+            <Line
+              type="monotone"
+              dataKey="actualWeightG"
+              name="actualWeightG"
+              stroke="#0B3D91"
+              strokeWidth={2.5}
+              dot={{ r: 3 }}
+              connectNulls={false}
+              isAnimationActive={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="simulatedWeightG"
+              name="simulatedWeightG"
+              stroke="#94a3b8"
+              strokeWidth={2}
+              strokeDasharray="6 4"
+              dot={false}
+              connectNulls={false}
+              isAnimationActive={false}
+            />
+          </LineChart>
         </ResponsiveContainer>
+
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <p className="text-xs text-slate-500">
+            Estimated growth factor:{" "}
+            <span className="font-semibold text-slate-700">
+              {weightTimeSeries.actualCount >= 2
+                ? `${weightTimeSeries.dailyGainG.toFixed(1)} g/day`
+                : "Not enough data (need 2+ calculations)"}
+            </span>
+          </p>
+          <p className="text-xs text-slate-400">
+            Simulation horizon: 14 days
+          </p>
+        </div>
       </Card>
 
       {history.length > 0 && (
