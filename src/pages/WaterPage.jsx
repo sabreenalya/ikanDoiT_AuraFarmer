@@ -409,11 +409,16 @@ export default function WaterPage({ user, params, setParams, connectedDevice, on
               </svg>
             </div>
             <div className="text-left">
-              <h3 className="font-bold text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                AI-Powered Recommendations
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  AI-Powered Recommendations
+                </h3>
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${aiSource === "gemini" ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"}`}>
+                  {aiSource === "gemini" ? "Powered by Gemini" : "Local AI"}
+                </span>
+              </div>
               <p className="text-sm text-slate-600">
-                {aiRecommendations.length} {aiRecommendations.length === 1 ? 'insight' : 'insights'} based on current water quality
+                {aiLoading ? "Analysing your pond..." : `${aiRecommendations.length} ${aiRecommendations.length === 1 ? 'insight' : 'insights'} based on current water quality`}
               </p>
             </div>
           </div>
