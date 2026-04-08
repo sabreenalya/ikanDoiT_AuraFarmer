@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import {
   Card,
@@ -12,126 +12,107 @@ import {
   supabaseUrl,
 } from "../shared/aquaCore";
 
-// AI Alert Recommendations based on water parameters
-const getAIRecommendations = (params) => {
+// Local fallback AI recommendations based on water parameters
+const getLocalRecommendations = (params) => {
   const recommendations = [];
 
-  // Dissolved Oxygen Analysis
   if (params.DO < 5) {
-    recommendations.push({
-      severity: "critical",
-      parameter: "Dissolved Oxygen",
-      issue: "Critically low oxygen levels detected",
-      action: "Immediate aeration required",
-      details: "Install additional aerators or increase oxygen flow immediately. Fish may experience stress or mortality if not addressed within 1-2 hours.",
-      icon: "⚠️"
-    });
+    recommendations.push({ severity: "critical", parameter: "Dissolved Oxygen", issue: "Critically low oxygen levels detected", action: "Immediate aeration required", details: "Install additional aerators or increase oxygen flow immediately. Fish may experience stress or mortality if not addressed within 1-2 hours.", icon: "⚠️" });
   } else if (params.DO < 6) {
-    recommendations.push({
-      severity: "warning",
-      parameter: "Dissolved Oxygen",
-      issue: "Oxygen levels below optimal range",
-      action: "Increase aeration",
-      details: "Turn on backup aerators or reduce feeding temporarily. Monitor fish behavior for signs of stress (gasping at surface).",
-      icon: "⚡"
-    });
+    recommendations.push({ severity: "warning", parameter: "Dissolved Oxygen", issue: "Oxygen levels below optimal range", action: "Increase aeration", details: "Turn on backup aerators or reduce feeding temporarily. Monitor fish behavior for signs of stress (gasping at surface).", icon: "⚡" });
   }
 
-  // pH Analysis
   if (params.pH < 6.5 || params.pH > 8.5) {
-    recommendations.push({
-      severity: "critical",
-      parameter: "pH Level",
-      issue: `pH ${params.pH < 6.5 ? 'too acidic' : 'too alkaline'}`,
-      action: `Add ${params.pH < 6.5 ? 'lime or sodium bicarbonate' : 'organic acids'}`,
-      details: `Target pH: 7.0-8.0. ${params.pH < 6.5 ? 'Low pH can stress fish and reduce immunity' : 'High pH can cause ammonia toxicity'}. Adjust gradually over 24-48 hours.`,
-      icon: "🧪"
-    });
+    recommendations.push({ severity: "critical", parameter: "pH Level", issue: `pH ${params.pH < 6.5 ? 'too acidic' : 'too alkaline'}`, action: `Add ${params.pH < 6.5 ? 'lime or sodium bicarbonate' : 'organic acids'}`, details: `Target pH: 7.0-8.0. ${params.pH < 6.5 ? 'Low pH can stress fish and reduce immunity' : 'High pH can cause ammonia toxicity'}. Adjust gradually over 24-48 hours.`, icon: "🧪" });
   } else if (params.pH < 7 || params.pH > 8) {
-    recommendations.push({
-      severity: "warning",
-      parameter: "pH Level",
-      issue: "pH slightly outside optimal range",
-      action: "Monitor and prepare for adjustment",
-      details: "Keep pH buffers ready. Test water 2-3 times daily to track trends.",
-      icon: "📊"
-    });
+    recommendations.push({ severity: "warning", parameter: "pH Level", issue: "pH slightly outside optimal range", action: "Monitor and prepare for adjustment", details: "Keep pH buffers ready. Test water 2-3 times daily to track trends.", icon: "📊" });
   }
 
-  // Temperature Analysis
   if (params.Temp > 32 || params.Temp < 24) {
-    recommendations.push({
-      severity: "critical",
-      parameter: "Temperature",
-      issue: `Water temperature ${params.Temp > 32 ? 'too high' : 'too low'}`,
-      action: params.Temp > 32 ? "Cool water immediately" : "Heat water gradually",
-      details: params.Temp > 32 
-        ? "Add ice packs or increase water circulation. High temps reduce oxygen and increase ammonia toxicity." 
-        : "Reduce feeding and monitor for disease. Cold stress weakens immune system.",
-      icon: "🌡️"
-    });
+    recommendations.push({ severity: "critical", parameter: "Temperature", issue: `Water temperature ${params.Temp > 32 ? 'too high' : 'too low'}`, action: params.Temp > 32 ? "Cool water immediately" : "Heat water gradually", details: params.Temp > 32 ? "Add ice packs or increase water circulation. High temps reduce oxygen and increase ammonia toxicity." : "Reduce feeding and monitor for disease. Cold stress weakens immune system.", icon: "🌡️" });
   }
 
-  // Ammonia Analysis
   if (params.NH3 > 0.05) {
-    recommendations.push({
-      severity: "critical",
-      parameter: "Ammonia",
-      issue: "Toxic ammonia levels detected",
-      action: "Perform emergency water change",
-      details: "Change 30-50% of water immediately. Stop feeding for 24 hours. Check biofilter function and add beneficial bacteria supplements.",
-      icon: "☠️"
-    });
+    recommendations.push({ severity: "critical", parameter: "Ammonia", issue: "Toxic ammonia levels detected", action: "Perform emergency water change", details: "Change 30-50% of water immediately. Stop feeding for 24 hours. Check biofilter function and add beneficial bacteria supplements.", icon: "☠️" });
   } else if (params.NH3 > 0.025) {
-    recommendations.push({
-      severity: "warning",
-      parameter: "Ammonia",
-      issue: "Elevated ammonia levels",
-      action: "Partial water change recommended",
-      details: "Change 20-30% of water. Reduce feeding by 50%. Test daily until levels stabilize below 0.02 mg/L.",
-      icon: "⚠️"
-    });
+    recommendations.push({ severity: "warning", parameter: "Ammonia", issue: "Elevated ammonia levels", action: "Partial water change recommended", details: "Change 20-30% of water. Reduce feeding by 50%. Test daily until levels stabilize below 0.02 mg/L.", icon: "⚠️" });
   }
 
-  // Nitrate Analysis
   if (params.NO3 > 20) {
-    recommendations.push({
-      severity: "warning",
-      parameter: "Nitrate",
-      issue: "High nitrate accumulation",
-      action: "Schedule water change",
-      details: "Plan 25-30% water change within 24 hours. Consider adding aquatic plants to absorb excess nitrates naturally.",
-      icon: "🌊"
-    });
+    recommendations.push({ severity: "warning", parameter: "Nitrate", issue: "High nitrate accumulation", action: "Schedule water change", details: "Plan 25-30% water change within 24 hours. Consider adding aquatic plants to absorb excess nitrates naturally.", icon: "🌊" });
   }
 
-  // Salinity Analysis
   if (params.Salinity > 10 || params.Salinity < 0) {
-    recommendations.push({
-      severity: "warning",
-      parameter: "Salinity",
-      issue: "Salinity outside recommended range",
-      action: params.Salinity > 10 ? "Dilute with fresh water" : "Check sensor calibration",
-      details: params.Salinity > 10 
-        ? "Gradually add dechlorinated fresh water to reduce salinity. Monitor fish for osmotic stress."
-        : "Verify sensor is functioning correctly. Recalibrate if necessary.",
-      icon: "🧂"
-    });
+    recommendations.push({ severity: "warning", parameter: "Salinity", issue: "Salinity outside recommended range", action: params.Salinity > 10 ? "Dilute with fresh water" : "Check sensor calibration", details: params.Salinity > 10 ? "Gradually add dechlorinated fresh water to reduce salinity. Monitor fish for osmotic stress." : "Verify sensor is functioning correctly. Recalibrate if necessary.", icon: "🧂" });
   }
 
-  // General health check
   if (recommendations.length === 0) {
-    recommendations.push({
-      severity: "good",
-      parameter: "All Parameters",
-      issue: "Water quality optimal",
-      action: "Continue current practices",
-      details: "All parameters within ideal ranges. Maintain regular feeding schedule, monitor daily, and perform routine 10-15% weekly water changes.",
-      icon: "✅"
-    });
+    recommendations.push({ severity: "good", parameter: "All Parameters", issue: "Water quality optimal", action: "Continue current practices", details: "All parameters within ideal ranges. Maintain regular feeding schedule, monitor daily, and perform routine 10-15% weekly water changes.", icon: "✅" });
   }
 
   return recommendations;
+};
+
+// Call Gemini API for dynamic AI recommendations
+const callGeminiForRecommendations = async (params) => {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) throw new Error("No API key");
+
+  const prompt = `You are an aquaculture expert helping fish farmers.
+
+Analyze the water parameters below and give simple, practical advice.
+
+Return ONLY a JSON array.
+
+Each item must include:
+- severity: 'critical', 'warning', or 'good'
+- parameter
+- issue
+- action
+- details (1–2 sentences)
+- icon (emoji)
+
+Water Data:
+DO: ${params.DO} mg/L
+pH: ${params.pH}
+Temperature: ${params.Temp}°C
+Ammonia: ${params.NH3} mg/L
+Nitrate: ${params.NO3} mg/L
+Salinity: ${params.Salinity} ppt`;
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.4 },
+      }),
+    }
+  );
+
+  if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
+
+  const data = await response.json();
+  let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("Empty response");
+
+  // Strip markdown code fences if present
+  text = text.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
+
+  const parsed = JSON.parse(text);
+  if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("Invalid format");
+
+  // Validate each item has required fields
+  return parsed.map((item) => ({
+    severity: ["critical", "warning", "good"].includes(item.severity) ? item.severity : "good",
+    parameter: item.parameter || "Unknown",
+    issue: item.issue || "",
+    action: item.action || "",
+    details: item.details || "",
+    icon: item.icon || "💡",
+  }));
 };
 
 // Mock historical data (in real app, this would come from Supabase)
@@ -160,12 +141,39 @@ const generateHistoricalData = () => {
 
 export default function WaterPage({ user, params, setParams, connectedDevice, onBuySensor, onConnectDevice, onDisconnectDevice }) {
   const alerts = useMemo(() => getAlerts(params), [params]);
-  const aiRecommendations = useMemo(() => getAIRecommendations(params), [params]);
+  const [aiRecommendations, setAiRecommendations] = useState([]);
+  const [aiSource, setAiSource] = useState("local"); // "gemini" or "local"
+  const [aiLoading, setAiLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showDisconnectModal, setShowDisconnectModal] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
+
+  // Fetch Gemini recommendations when params change
+  useEffect(() => {
+    let cancelled = false;
+    const fetchRecs = async () => {
+      setAiLoading(true);
+      try {
+        const recs = await callGeminiForRecommendations(params);
+        if (!cancelled) {
+          setAiRecommendations(recs);
+          setAiSource("gemini");
+        }
+      } catch {
+        // Fallback silently
+        if (!cancelled) {
+          setAiRecommendations(getLocalRecommendations(params));
+          setAiSource("local");
+        }
+      } finally {
+        if (!cancelled) setAiLoading(false);
+      }
+    };
+    fetchRecs();
+    return () => { cancelled = true; };
+  }, [params]);
   const [historicalData, setHistoricalData] = useState([]);
   const [selectedDateRange, setSelectedDateRange] = useState('7days');
   const [selectedParameter, setSelectedParameter] = useState('DO');
@@ -401,11 +409,16 @@ export default function WaterPage({ user, params, setParams, connectedDevice, on
               </svg>
             </div>
             <div className="text-left">
-              <h3 className="font-bold text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                AI-Powered Recommendations
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  AI-Powered Recommendations
+                </h3>
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${aiSource === "gemini" ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"}`}>
+                  {aiSource === "gemini" ? "Powered by Gemini" : "Local AI"}
+                </span>
+              </div>
               <p className="text-sm text-slate-600">
-                {aiRecommendations.length} {aiRecommendations.length === 1 ? 'insight' : 'insights'} based on current water quality
+                {aiLoading ? "Analysing your pond..." : `${aiRecommendations.length} ${aiRecommendations.length === 1 ? 'insight' : 'insights'} based on current water quality`}
               </p>
             </div>
           </div>
@@ -421,42 +434,54 @@ export default function WaterPage({ user, params, setParams, connectedDevice, on
 
         {showAIPanel && (
           <div className="px-5 pb-5 space-y-3">
-            {aiRecommendations.map((rec, idx) => {
-              const severityStyles = {
-                critical: "border-red-200 bg-red-50",
-                warning: "border-amber-200 bg-amber-50",
-                good: "border-emerald-200 bg-emerald-50",
-              };
-              const iconColor = {
-                critical: "text-red-600",
-                warning: "text-amber-600",
-                good: "text-emerald-600",
-              };
+            {aiLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="flex items-center gap-3 text-slate-500">
+                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span className="text-sm font-medium">Analysing your pond...</span>
+                </div>
+              </div>
+            ) : (
+              aiRecommendations.map((rec, idx) => {
+                const severityStyles = {
+                  critical: "border-red-200 bg-red-50",
+                  warning: "border-amber-200 bg-amber-50",
+                  good: "border-emerald-200 bg-emerald-50",
+                };
+                const iconColor = {
+                  critical: "text-red-600",
+                  warning: "text-amber-600",
+                  good: "text-emerald-600",
+                };
 
-              return (
-                <div
-                  key={idx}
-                  className={`border-2 rounded-xl p-4 ${severityStyles[rec.severity]}`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="text-2xl flex-shrink-0">{rec.icon}</div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-1">
-                        <h4 className="font-bold text-slate-900">{rec.parameter}</h4>
-                        <span className={`text-xs font-bold uppercase px-2 py-1 rounded ${iconColor[rec.severity]}`}>
-                          {rec.severity}
-                        </span>
+                return (
+                  <div
+                    key={idx}
+                    className={`border-2 rounded-xl p-4 ${severityStyles[rec.severity]}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="text-2xl flex-shrink-0">{rec.icon}</div>
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-1">
+                          <h4 className="font-bold text-slate-900">{rec.parameter}</h4>
+                          <span className={`text-xs font-bold uppercase px-2 py-1 rounded ${iconColor[rec.severity]}`}>
+                            {rec.severity}
+                          </span>
+                        </div>
+                        <p className="text-sm font-semibold text-slate-700 mb-1">{rec.issue}</p>
+                        <p className="text-sm text-slate-600 mb-2">
+                          <span className="font-semibold">Recommended Action:</span> {rec.action}
+                        </p>
+                        <p className="text-xs text-slate-600 leading-relaxed">{rec.details}</p>
                       </div>
-                      <p className="text-sm font-semibold text-slate-700 mb-1">{rec.issue}</p>
-                      <p className="text-sm text-slate-600 mb-2">
-                        <span className="font-semibold">Recommended Action:</span> {rec.action}
-                      </p>
-                      <p className="text-xs text-slate-600 leading-relaxed">{rec.details}</p>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         )}
       </Card>
