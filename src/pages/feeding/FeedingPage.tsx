@@ -340,13 +340,7 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
         </div>
       </div>
 
-      {/* Checklist */}
-      <FeedingChecklist
-        items={checklist}
-        onComplete={handleComplete}
-        activeItem={activeChecklistItem}
-        onChangeActiveItem={setActiveChecklistItem}
-      />
+      
 
       {/* 7-day history chart */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">

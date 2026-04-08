@@ -41,7 +41,7 @@ export default function BiomassStatusCard({
             <div className="h-8 w-28 bg-slate-200 rounded animate-pulse" />
           ) : biomass ? (
             <>
-              <p className="text-3xl font-bold text-[#0B3D91]">
+              <p className="text-2xl font-bold text-[#0B3D91]">
                 {biomass.biomass_kg.toFixed(1)}{" "}
                 <span className="text-base font-normal text-slate-500">kg</span>
               </p>

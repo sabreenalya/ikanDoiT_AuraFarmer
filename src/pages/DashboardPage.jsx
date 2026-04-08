@@ -161,35 +161,7 @@ export default function DashboardPage({ user, params, setParams }) {
         </ResponsiveContainer>
       </Card>
 
-      <Card className="p-5">
-        <h3 className="font-semibold text-slate-700 mb-4 text-sm">
-          Quick Parameter Update
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {Object.keys(params).map((key) => (
-            <div key={key}>
-              <label className="block text-xs text-slate-500 mb-1">
-                {key}
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={params[key]}
-                onChange={(e) =>
-                  setParams((p) => ({
-                    ...p,
-                    [key]: parseFloat(e.target.value) || 0,
-                  }))
-                }
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-blue-400 outline-none"
-              />
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-slate-400 mt-3">
-          Changes update alert status in real-time.
-        </p>
-      </Card>
+      
     </div>
   );
 }
