@@ -434,42 +434,54 @@ export default function WaterPage({ user, params, setParams, connectedDevice, on
 
         {showAIPanel && (
           <div className="px-5 pb-5 space-y-3">
-            {aiRecommendations.map((rec, idx) => {
-              const severityStyles = {
-                critical: "border-red-200 bg-red-50",
-                warning: "border-amber-200 bg-amber-50",
-                good: "border-emerald-200 bg-emerald-50",
-              };
-              const iconColor = {
-                critical: "text-red-600",
-                warning: "text-amber-600",
-                good: "text-emerald-600",
-              };
+            {aiLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="flex items-center gap-3 text-slate-500">
+                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span className="text-sm font-medium">Analysing your pond...</span>
+                </div>
+              </div>
+            ) : (
+              aiRecommendations.map((rec, idx) => {
+                const severityStyles = {
+                  critical: "border-red-200 bg-red-50",
+                  warning: "border-amber-200 bg-amber-50",
+                  good: "border-emerald-200 bg-emerald-50",
+                };
+                const iconColor = {
+                  critical: "text-red-600",
+                  warning: "text-amber-600",
+                  good: "text-emerald-600",
+                };
 
-              return (
-                <div
-                  key={idx}
-                  className={`border-2 rounded-xl p-4 ${severityStyles[rec.severity]}`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="text-2xl flex-shrink-0">{rec.icon}</div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-1">
-                        <h4 className="font-bold text-slate-900">{rec.parameter}</h4>
-                        <span className={`text-xs font-bold uppercase px-2 py-1 rounded ${iconColor[rec.severity]}`}>
-                          {rec.severity}
-                        </span>
+                return (
+                  <div
+                    key={idx}
+                    className={`border-2 rounded-xl p-4 ${severityStyles[rec.severity]}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="text-2xl flex-shrink-0">{rec.icon}</div>
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-1">
+                          <h4 className="font-bold text-slate-900">{rec.parameter}</h4>
+                          <span className={`text-xs font-bold uppercase px-2 py-1 rounded ${iconColor[rec.severity]}`}>
+                            {rec.severity}
+                          </span>
+                        </div>
+                        <p className="text-sm font-semibold text-slate-700 mb-1">{rec.issue}</p>
+                        <p className="text-sm text-slate-600 mb-2">
+                          <span className="font-semibold">Recommended Action:</span> {rec.action}
+                        </p>
+                        <p className="text-xs text-slate-600 leading-relaxed">{rec.details}</p>
                       </div>
-                      <p className="text-sm font-semibold text-slate-700 mb-1">{rec.issue}</p>
-                      <p className="text-sm text-slate-600 mb-2">
-                        <span className="font-semibold">Recommended Action:</span> {rec.action}
-                      </p>
-                      <p className="text-xs text-slate-600 leading-relaxed">{rec.details}</p>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         )}
       </Card>
