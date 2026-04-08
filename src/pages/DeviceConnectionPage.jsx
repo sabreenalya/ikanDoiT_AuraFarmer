@@ -42,9 +42,9 @@ export default function DeviceConnectionPage({ onConnect, onBack }) {
     setStep(2);
 
     // Simulate connection process
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, 200));
 
     const device = {
       id: deviceId,
@@ -248,7 +248,7 @@ export default function DeviceConnectionPage({ onConnect, onBack }) {
                 Connecting Your Device...
               </h2>
               <p className="text-slate-600 mb-8">
-                This may take up to 30 seconds
+                This will take a few seconds.
               </p>
 
               <div className="space-y-4 text-left">
