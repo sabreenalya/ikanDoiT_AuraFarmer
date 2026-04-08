@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import {
   Card,
@@ -12,126 +12,107 @@ import {
   supabaseUrl,
 } from "../shared/aquaCore";
 
-// AI Alert Recommendations based on water parameters
-const getAIRecommendations = (params) => {
+// Local fallback AI recommendations based on water parameters
+const getLocalRecommendations = (params) => {
   const recommendations = [];
 
-  // Dissolved Oxygen Analysis
   if (params.DO < 5) {
-    recommendations.push({
-      severity: "critical",
-      parameter: "Dissolved Oxygen",
-      issue: "Critically low oxygen levels detected",
-      action: "Immediate aeration required",
-      details: "Install additional aerators or increase oxygen flow immediately. Fish may experience stress or mortality if not addressed within 1-2 hours.",
-      icon: "⚠️"
-    });
+    recommendations.push({ severity: "critical", parameter: "Dissolved Oxygen", issue: "Critically low oxygen levels detected", action: "Immediate aeration required", details: "Install additional aerators or increase oxygen flow immediately. Fish may experience stress or mortality if not addressed within 1-2 hours.", icon: "⚠️" });
   } else if (params.DO < 6) {
-    recommendations.push({
-      severity: "warning",
-      parameter: "Dissolved Oxygen",
-      issue: "Oxygen levels below optimal range",
-      action: "Increase aeration",
-      details: "Turn on backup aerators or reduce feeding temporarily. Monitor fish behavior for signs of stress (gasping at surface).",
-      icon: "⚡"
-    });
+    recommendations.push({ severity: "warning", parameter: "Dissolved Oxygen", issue: "Oxygen levels below optimal range", action: "Increase aeration", details: "Turn on backup aerators or reduce feeding temporarily. Monitor fish behavior for signs of stress (gasping at surface).", icon: "⚡" });
   }
 
-  // pH Analysis
   if (params.pH < 6.5 || params.pH > 8.5) {
-    recommendations.push({
-      severity: "critical",
-      parameter: "pH Level",
-      issue: `pH ${params.pH < 6.5 ? 'too acidic' : 'too alkaline'}`,
-      action: `Add ${params.pH < 6.5 ? 'lime or sodium bicarbonate' : 'organic acids'}`,
-      details: `Target pH: 7.0-8.0. ${params.pH < 6.5 ? 'Low pH can stress fish and reduce immunity' : 'High pH can cause ammonia toxicity'}. Adjust gradually over 24-48 hours.`,
-      icon: "🧪"
-    });
+    recommendations.push({ severity: "critical", parameter: "pH Level", issue: `pH ${params.pH < 6.5 ? 'too acidic' : 'too alkaline'}`, action: `Add ${params.pH < 6.5 ? 'lime or sodium bicarbonate' : 'organic acids'}`, details: `Target pH: 7.0-8.0. ${params.pH < 6.5 ? 'Low pH can stress fish and reduce immunity' : 'High pH can cause ammonia toxicity'}. Adjust gradually over 24-48 hours.`, icon: "🧪" });
   } else if (params.pH < 7 || params.pH > 8) {
-    recommendations.push({
-      severity: "warning",
-      parameter: "pH Level",
-      issue: "pH slightly outside optimal range",
-      action: "Monitor and prepare for adjustment",
-      details: "Keep pH buffers ready. Test water 2-3 times daily to track trends.",
-      icon: "📊"
-    });
+    recommendations.push({ severity: "warning", parameter: "pH Level", issue: "pH slightly outside optimal range", action: "Monitor and prepare for adjustment", details: "Keep pH buffers ready. Test water 2-3 times daily to track trends.", icon: "📊" });
   }
 
-  // Temperature Analysis
   if (params.Temp > 32 || params.Temp < 24) {
-    recommendations.push({
-      severity: "critical",
-      parameter: "Temperature",
-      issue: `Water temperature ${params.Temp > 32 ? 'too high' : 'too low'}`,
-      action: params.Temp > 32 ? "Cool water immediately" : "Heat water gradually",
-      details: params.Temp > 32 
-        ? "Add ice packs or increase water circulation. High temps reduce oxygen and increase ammonia toxicity." 
-        : "Reduce feeding and monitor for disease. Cold stress weakens immune system.",
-      icon: "🌡️"
-    });
+    recommendations.push({ severity: "critical", parameter: "Temperature", issue: `Water temperature ${params.Temp > 32 ? 'too high' : 'too low'}`, action: params.Temp > 32 ? "Cool water immediately" : "Heat water gradually", details: params.Temp > 32 ? "Add ice packs or increase water circulation. High temps reduce oxygen and increase ammonia toxicity." : "Reduce feeding and monitor for disease. Cold stress weakens immune system.", icon: "🌡️" });
   }
 
-  // Ammonia Analysis
   if (params.NH3 > 0.05) {
-    recommendations.push({
-      severity: "critical",
-      parameter: "Ammonia",
-      issue: "Toxic ammonia levels detected",
-      action: "Perform emergency water change",
-      details: "Change 30-50% of water immediately. Stop feeding for 24 hours. Check biofilter function and add beneficial bacteria supplements.",
-      icon: "☠️"
-    });
+    recommendations.push({ severity: "critical", parameter: "Ammonia", issue: "Toxic ammonia levels detected", action: "Perform emergency water change", details: "Change 30-50% of water immediately. Stop feeding for 24 hours. Check biofilter function and add beneficial bacteria supplements.", icon: "☠️" });
   } else if (params.NH3 > 0.025) {
-    recommendations.push({
-      severity: "warning",
-      parameter: "Ammonia",
-      issue: "Elevated ammonia levels",
-      action: "Partial water change recommended",
-      details: "Change 20-30% of water. Reduce feeding by 50%. Test daily until levels stabilize below 0.02 mg/L.",
-      icon: "⚠️"
-    });
+    recommendations.push({ severity: "warning", parameter: "Ammonia", issue: "Elevated ammonia levels", action: "Partial water change recommended", details: "Change 20-30% of water. Reduce feeding by 50%. Test daily until levels stabilize below 0.02 mg/L.", icon: "⚠️" });
   }
 
-  // Nitrate Analysis
   if (params.NO3 > 20) {
-    recommendations.push({
-      severity: "warning",
-      parameter: "Nitrate",
-      issue: "High nitrate accumulation",
-      action: "Schedule water change",
-      details: "Plan 25-30% water change within 24 hours. Consider adding aquatic plants to absorb excess nitrates naturally.",
-      icon: "🌊"
-    });
+    recommendations.push({ severity: "warning", parameter: "Nitrate", issue: "High nitrate accumulation", action: "Schedule water change", details: "Plan 25-30% water change within 24 hours. Consider adding aquatic plants to absorb excess nitrates naturally.", icon: "🌊" });
   }
 
-  // Salinity Analysis
   if (params.Salinity > 10 || params.Salinity < 0) {
-    recommendations.push({
-      severity: "warning",
-      parameter: "Salinity",
-      issue: "Salinity outside recommended range",
-      action: params.Salinity > 10 ? "Dilute with fresh water" : "Check sensor calibration",
-      details: params.Salinity > 10 
-        ? "Gradually add dechlorinated fresh water to reduce salinity. Monitor fish for osmotic stress."
-        : "Verify sensor is functioning correctly. Recalibrate if necessary.",
-      icon: "🧂"
-    });
+    recommendations.push({ severity: "warning", parameter: "Salinity", issue: "Salinity outside recommended range", action: params.Salinity > 10 ? "Dilute with fresh water" : "Check sensor calibration", details: params.Salinity > 10 ? "Gradually add dechlorinated fresh water to reduce salinity. Monitor fish for osmotic stress." : "Verify sensor is functioning correctly. Recalibrate if necessary.", icon: "🧂" });
   }
 
-  // General health check
   if (recommendations.length === 0) {
-    recommendations.push({
-      severity: "good",
-      parameter: "All Parameters",
-      issue: "Water quality optimal",
-      action: "Continue current practices",
-      details: "All parameters within ideal ranges. Maintain regular feeding schedule, monitor daily, and perform routine 10-15% weekly water changes.",
-      icon: "✅"
-    });
+    recommendations.push({ severity: "good", parameter: "All Parameters", issue: "Water quality optimal", action: "Continue current practices", details: "All parameters within ideal ranges. Maintain regular feeding schedule, monitor daily, and perform routine 10-15% weekly water changes.", icon: "✅" });
   }
 
   return recommendations;
+};
+
+// Call Gemini API for dynamic AI recommendations
+const callGeminiForRecommendations = async (params) => {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) throw new Error("No API key");
+
+  const prompt = `You are an aquaculture expert helping fish farmers.
+
+Analyze the water parameters below and give simple, practical advice.
+
+Return ONLY a JSON array.
+
+Each item must include:
+- severity: 'critical', 'warning', or 'good'
+- parameter
+- issue
+- action
+- details (1–2 sentences)
+- icon (emoji)
+
+Water Data:
+DO: ${params.DO} mg/L
+pH: ${params.pH}
+Temperature: ${params.Temp}°C
+Ammonia: ${params.NH3} mg/L
+Nitrate: ${params.NO3} mg/L
+Salinity: ${params.Salinity} ppt`;
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.4 },
+      }),
+    }
+  );
+
+  if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
+
+  const data = await response.json();
+  let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("Empty response");
+
+  // Strip markdown code fences if present
+  text = text.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
+
+  const parsed = JSON.parse(text);
+  if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("Invalid format");
+
+  // Validate each item has required fields
+  return parsed.map((item) => ({
+    severity: ["critical", "warning", "good"].includes(item.severity) ? item.severity : "good",
+    parameter: item.parameter || "Unknown",
+    issue: item.issue || "",
+    action: item.action || "",
+    details: item.details || "",
+    icon: item.icon || "💡",
+  }));
 };
 
 // Mock historical data (in real app, this would come from Supabase)
