@@ -141,12 +141,39 @@ const generateHistoricalData = () => {
 
 export default function WaterPage({ user, params, setParams, connectedDevice, onBuySensor, onConnectDevice, onDisconnectDevice }) {
   const alerts = useMemo(() => getAlerts(params), [params]);
-  const aiRecommendations = useMemo(() => getAIRecommendations(params), [params]);
+  const [aiRecommendations, setAiRecommendations] = useState([]);
+  const [aiSource, setAiSource] = useState("local"); // "gemini" or "local"
+  const [aiLoading, setAiLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showDisconnectModal, setShowDisconnectModal] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
+
+  // Fetch Gemini recommendations when params change
+  useEffect(() => {
+    let cancelled = false;
+    const fetchRecs = async () => {
+      setAiLoading(true);
+      try {
+        const recs = await callGeminiForRecommendations(params);
+        if (!cancelled) {
+          setAiRecommendations(recs);
+          setAiSource("gemini");
+        }
+      } catch {
+        // Fallback silently
+        if (!cancelled) {
+          setAiRecommendations(getLocalRecommendations(params));
+          setAiSource("local");
+        }
+      } finally {
+        if (!cancelled) setAiLoading(false);
+      }
+    };
+    fetchRecs();
+    return () => { cancelled = true; };
+  }, [params]);
   const [historicalData, setHistoricalData] = useState([]);
   const [selectedDateRange, setSelectedDateRange] = useState('7days');
   const [selectedParameter, setSelectedParameter] = useState('DO');
