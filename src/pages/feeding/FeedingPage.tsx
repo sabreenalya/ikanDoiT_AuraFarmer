@@ -13,7 +13,7 @@ import { useBiomass, useFeedingSchedule, useFeedingLogs, useFeedPrice, useAlerts
 
 import { FeedingChecklist, AlertsPanel, BiomassStatusCard } from "./components";
 
-import { calcCostSummary, analyzeFeedingInsights } from "./utils/feedingUtils";
+import { calcCostSummary, analyzeFeedingInsights, getFeedPercentage } from "./utils/feedingUtils";
 import type { FeedingChecklistItem, FishResponse, FeedingLog, FeedingAlert } from "./types/feeding.types";
 
 interface FeedingPageProps {
@@ -42,15 +42,32 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
     useFeedingLogs(pondId);
   const { pricePerKg, setPricePerKg } = useFeedPrice(user?.id);
 
-  const biomassKg   = biomass?.biomass_kg   ?? 250;
-  const avgWeightKg = biomass?.avg_weight_kg ?? 0.18;
-  const tempC       = params.Temp ?? 28;
+  const biomassKg = biomass?.biomass_kg ?? 250;
+  const avgWeightG = 143.9;
+  const avgWeightKg = avgWeightG / 1000;
+  const fishCount = 500;
+  const growthRateGPerDay = 1.1;
+  const tempC = params.Temp ?? 28;
+
+  const biomassForDisplay = biomass
+    ? { ...biomass, fish_count: fishCount, avg_weight_kg: avgWeightKg }
+    : biomass;
+
+  const feedingRate = getFeedPercentage(avgWeightKg);
 
   const { checklist, dailyTotal, adaptiveNote } = useFeedingSchedule(
     biomassKg, avgWeightKg, tempC, mealsPerDay, recentLogs, todayLogs
   );
 
   const cost    = useMemo(() => calcCostSummary(dailyTotal, pricePerKg), [dailyTotal, pricePerKg]);
+  const projectedMonthlyCost = useMemo(() => {
+    const DAYS = 30;
+    const effectivePct = biomassKg > 0 ? dailyTotal / biomassKg : 0;
+    const dailyBiomassGainKg = (fishCount * growthRateGPerDay) / 1000;
+    const triangular = (DAYS - 1) * DAYS / 2;
+    const monthlyFeedKg = effectivePct * (DAYS * biomassKg + dailyBiomassGainKg * triangular);
+    return parseFloat((monthlyFeedKg * pricePerKg).toFixed(2));
+  }, [biomassKg, dailyTotal, fishCount, growthRateGPerDay, pricePerKg]);
   const insight = useMemo(() => analyzeFeedingInsights(historyLogs), [historyLogs]);
 
   // biomass_records uses "timestamp" column (not "created_at")
@@ -127,7 +144,7 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
 
       {/* Biomass banner */}
       <BiomassStatusCard
-        biomass={biomass}
+        biomass={biomassForDisplay}
         isStale={isStale}
         loading={biomassLoading}
         onRefetch={refetchBiomass}
@@ -182,20 +199,16 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
             {/* Info summary */}
             <div className="p-3 bg-slate-50 rounded-xl text-xs text-slate-600 space-y-1.5">
               <div className="flex justify-between">
-                <span>🌡 Water temp</span>
-                <strong className={tempC > 30 ? "text-amber-600" : "text-slate-700"}>
-                  {tempC}°C{tempC > 30 ? " (↓ reduced)" : ""}
-                </strong>
-              </div>
-              <div className="flex justify-between">
                 <span>⚖ Avg fish weight</span>
-                <strong className="text-slate-700">{(avgWeightKg * 1000).toFixed(0)}g / fish</strong>
+                <strong className="text-slate-700">{avgWeightG.toFixed(1)}g / fish</strong>
               </div>
               <div className="flex justify-between">
                 <span>🐟 Fish count</span>
-                <strong className="text-slate-700">
-                  {biomass?.fish_count?.toLocaleString() ?? "—"}
-                </strong>
+                <strong className="text-slate-700">{fishCount.toLocaleString()}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>📈 Feeding rate</span>
+                <strong className="text-slate-700">{(feedingRate * 100).toFixed(0)}%</strong>
               </div>
               <div className="flex justify-between border-t border-slate-200 pt-1.5 mt-1">
                 <span>📊 Daily feed target</span>
@@ -216,6 +229,9 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
                 onChange={(e) => setPricePerKg(parseFloat(e.target.value) || pricePerKg)}
                 className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-blue-400 outline-none"
               />
+              <p className="text-xs text-slate-500 mt-1.5">
+                Growth rate: <span className="font-semibold text-slate-700">{growthRateGPerDay.toFixed(1)} g/day</span>
+              </p>
             </div>
 
             {/* Cost summary */}
@@ -227,9 +243,9 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
               <div className="bg-indigo-50 rounded-xl p-3 text-center">
                 <p className="text-xs text-indigo-500 mb-0.5">Monthly Est.</p>
                 <p className="font-bold text-indigo-700 text-base">
-                  RM {cost.monthlyCost >= 1000
-                    ? `${(cost.monthlyCost / 1000).toFixed(1)}k`
-                    : cost.monthlyCost.toFixed(0)}
+                  RM {projectedMonthlyCost >= 1000
+                    ? `${(projectedMonthlyCost / 1000).toFixed(1)}k`
+                    : projectedMonthlyCost.toFixed(0)}
                 </p>
               </div>
             </div>
@@ -333,10 +349,6 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
               );
             })}
           </div>
-
-          <p className="text-xs text-slate-400 mt-4 text-center">
-            {(avgWeightKg * 1000).toFixed(0)}g avg · {tempC}°C · {mealsPerDay} meals/day
-          </p>
         </div>
       </div>
 
