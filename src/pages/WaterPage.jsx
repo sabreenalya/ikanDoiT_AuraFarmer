@@ -135,7 +135,7 @@ function NotificationBell({ alerts, params }) {
 
 // ─── Gemini AI Recommendation call ───────────────────────────────────────────
 const callGeminiForRecommendations = async (params) => {
-  const apiKey = 'AIzaSyBs_GMgZW-OSggjMCwvyiQGTNmktdBsLKs';
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) return null;
   try {
     const prompt = `You are an expert aquaculture advisor helping fish farmers who may not have technical knowledge.
