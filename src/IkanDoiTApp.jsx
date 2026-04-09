@@ -791,9 +791,12 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [latestBiomass, setLatestBiomass] = useState(null);
+  const [biomassHistory, setBiomassHistory] = useState([]);
   const [params, setParams] = useState({
     DO: 6.8, pH: 7.2, Temp: 28.5, NH3: 0.018, NO3: 9.2, Salinity: 4.5,
   });
+  const [devices, setDevices] = useState([]);
+  const [activeDeviceIdx, setActiveDeviceIdx] = useState(0);
   const [selectedKit, setSelectedKit] = useState(null);
   const [orderInfo, setOrderInfo] = useState(null);
   const [connectedDevice, setConnectedDevice] = useState(null);
@@ -812,6 +815,13 @@ export default function App() {
   const handleSignOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null); setPage("landing");
+    setConnectedDevice(null);
+    setDevices([]);
+    setActiveDeviceIdx(0);
+    setLatestBiomass(null);
+    setBiomassHistory([]);
+    setSelectedKit(null);
+    setOrderInfo(null);
   }, []);
 
   const handleCTA = (mode = "signup") => {
@@ -860,6 +870,8 @@ export default function App() {
 
   const handleDisconnectDevice = () => {
     setConnectedDevice(null);
+    setDevices([]);
+    setActiveDeviceIdx(0);
     // Stay on water page, will show empty state
   };
 
@@ -868,17 +880,37 @@ export default function App() {
   };
 
   const pageContent = {
-    dashboard: <DashboardPage user={user} params={params} setParams={setParams} />,
+    dashboard: (
+      <DashboardPage
+        user={user}
+        params={params}
+        setParams={setParams}
+        devices={devices}
+        activeDeviceIdx={activeDeviceIdx}
+        biomassHistory={biomassHistory}
+      />
+    ),
     water: <WaterPage 
       user={user} 
       params={params} 
       setParams={setParams} 
       connectedDevice={connectedDevice}
+      devices={devices}
+      setDevices={setDevices}
+      activeDeviceIdx={activeDeviceIdx}
+      setActiveDeviceIdx={setActiveDeviceIdx}
       onBuySensor={() => setActivePage("product")}
       onConnectDevice={() => setActivePage("connect-device")}
       onDisconnectDevice={handleDisconnectDevice}
     />,
-    biomass: <BiomassPage user={user} setLatestBiomass={setLatestBiomass} onNavigateToFeeding={() => setActivePage("feeding")} />,
+    biomass: (
+      <BiomassPage
+        user={user}
+        setLatestBiomass={setLatestBiomass}
+        setBiomassHistory={setBiomassHistory}
+        onNavigateToFeeding={() => setActivePage("feeding")}
+      />
+    ),
     feeding: <FeedingPage user={user} latestBiomass={latestBiomass} params={params} />,
     product: <ProductPage onBuyNow={handleBuyNow} onBack={handleBackToWater} />,
     checkout: <CheckoutPage cart={selectedKit} onBack={() => setActivePage("product")} onComplete={handlePlaceOrder} />,

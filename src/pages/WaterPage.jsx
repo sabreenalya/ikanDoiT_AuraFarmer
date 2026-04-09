@@ -230,9 +230,9 @@ export default function WaterPage({
   onBuySensor,
   onConnectDevice,
   onDisconnectDevice,
-  devices,
+  devices = [],
   setDevices,
-  activeDeviceIdx,
+  activeDeviceIdx = 0,
   setActiveDeviceIdx,
 }) {
   const [showAddDeviceModal, setShowAddDeviceModal] = useState(false);
@@ -250,10 +250,13 @@ export default function WaterPage({
   const [aiLoading, setAiLoading] = useState(false);
   const [aiPoweredByGemini, setAiPoweredByGemini] = useState(false);
 
-  const activeDevice = devices[activeDeviceIdx] || null;
+  const safeDevices = Array.isArray(devices) ? devices : [];
+  const safeActiveIdx = Number.isFinite(activeDeviceIdx) ? activeDeviceIdx : 0;
+
+  const activeDevice = safeDevices[safeActiveIdx] || null;
   const params = activeDevice?.params || globalParams;
   const allPondsAlerts = useMemo(() => {
-    return devices.flatMap((dev) => {
+    return safeDevices.flatMap((dev) => {
       const pondAlerts = getAlerts(dev.params);
       if (!pondAlerts?.length) return [];
       const pondName = dev?.name || "Your pond";
@@ -265,7 +268,7 @@ export default function WaterPage({
         msg: `${pondName}: ${a.msg}`,
       }));
     });
-  }, [devices]);
+  }, [safeDevices]);
 
   const lastNotifiedAlertsRef = useRef({});
   const allPondsAlertsSignature = useMemo(() => {
@@ -325,10 +328,11 @@ export default function WaterPage({
 
   useEffect(() => { setHistoricalData(generateHistoricalData()); }, [activeDeviceIdx]);
   useEffect(() => {
-    if (connectedDevice && devices.length === 0) {
+    if (!connectedDevice) return;
+    if (!safeDevices.length && typeof setDevices === "function") {
       setDevices([{ ...connectedDevice, params: makeFirstPondParams() }]);
     }
-  }, [connectedDevice, devices.length, setDevices]);
+  }, [connectedDevice, safeDevices.length, setDevices]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
