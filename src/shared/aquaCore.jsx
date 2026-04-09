@@ -3,10 +3,8 @@ import { ResponsiveContainer, LineChart, Line } from "recharts";
 import { forwardRef } from "react";
 
 // ─── Supabase client ─────────────────────────────────────────────────────────
-export const supabaseUrl =
-  import.meta.env.VITE_SUPABASE_URL ?? "https://placeholder.supabase.co";
-const supabaseAnonKey =
-  import.meta.env.VITE_SUPABASE_ANON_KEY ?? "placeholder-anon-key";
+export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
