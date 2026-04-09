@@ -23,10 +23,10 @@
 ## 📖 About ikanDoiT
 
 ikanDoiT is a **smart aquaculture management platform** designed to help fish farmers:
-
-- Optimize feeding  
+ 
 - Monitor water quality  
-- Estimate biomass efficiently  
+- Estimate biomass efficiently
+- Optimize feeding 
 
 Using **AI and IoT technologies**, ikanDoiT eliminates guesswork and enables **data-driven decision-making** for modern fish farming.
 
