@@ -623,7 +623,7 @@ function LandingPage({ onCTA }) {
 
                 <div className="flex items-end gap-3 mb-3">
                   <span className="text-sm font-semibold text-slate-500">RM</span>
-                  <h3 className="text-5xl font-bold text-slate-900 leading-none">399</h3>
+                  <h3 className="text-5xl font-bold text-slate-900 leading-none">499</h3>
                   <p className="text-[11px] text-slate-500 leading-tight pb-1">
                     <span className="font-semibold">MYR /</span>
                     <br />
