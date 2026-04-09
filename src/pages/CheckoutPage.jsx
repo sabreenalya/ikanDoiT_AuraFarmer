@@ -18,6 +18,8 @@ export default function CheckoutPage({ cart, onComplete, onBack }) {
 
   const shippingCost = 15;
   const total = cart.price + shippingCost;
+  const qty = cart?.quantity ?? 1;
+  const warrantyYears = cart?.warrantyYears ?? (cart?.recommended ? 2 : 1);
 
   const handleShippingSubmit = (e) => {
     e.preventDefault();
@@ -321,7 +323,7 @@ export default function CheckoutPage({ cart, onComplete, onBack }) {
                   <div className="flex-1">
                     <p className="font-semibold text-slate-900">{cart.name}</p>
                     <p className="text-sm text-slate-600">ikanDoiT Sensor Kit</p>
-                    <p className="text-xs text-slate-500 mt-1">Qty: 1</p>
+                    <p className="text-xs text-slate-500 mt-1">Qty: {qty}</p>
                   </div>
                 </div>
 
@@ -357,7 +359,7 @@ export default function CheckoutPage({ cart, onComplete, onBack }) {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>{cart.recommended ? '2' : '1'} year warranty included</span>
+                    <span>{warrantyYears} year warranty included</span>
                   </div>
                 </div>
               </div>

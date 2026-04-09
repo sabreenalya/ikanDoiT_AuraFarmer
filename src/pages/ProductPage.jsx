@@ -4,45 +4,25 @@ import sensorImg from "../assets/ikanDoiT_sensor_kit.png";
 
 
 export default function ProductPage({ onBuyNow, onBack }) {
-  const [selectedKit, setSelectedKit] = useState("pro");
-
-  const kits = {
-    starter: {
-      name: "Starter Kit",
-      price: 249,
-      features: [
-        "ESP32 DEVKIT V1 Controller",
-        "4 Core Sensors (DO, Temp, pH, NH3)",
-        "Waterproof Enclosure",
-        "WiFi Antenna (2.4GHz)",
-        "Power Supply (5V/3A)",
-        "Dashboard Access",
-        "Mobile App Access",
-        "1 Year Warranty"
-      ],
-      sensors: ["DO", "Temperature", "pH", "NH3"]
-    },
-    pro: {
-      name: "Pro Kit",
-      price: 599,
-      recommended: true,
-      features: [
-        "ESP32 DEVKIT V1 Controller",
-        "6 Advanced Sensors (DO, Temp, pH, NH3, NO3, EC)",
-        "Premium Waterproof Enclosure",
-        "WiFi Antenna (2.4GHz)",
-        "Power Supply (5V/3A)",
-        "Priority Dashboard Access",
-        "Mobile App Access",
-        "Advanced Analytics",
-        "Priority Support",
-        "2 Year Warranty"
-      ],
-      sensors: ["DO", "Temperature", "pH", "NH3", "NO3", "EC/Salinity"]
-    }
+  const UNIT_PRICE = 1799;
+  const KIT = {
+    name: "All-in-one Sensor Kit",
+    price: UNIT_PRICE,
+    warrantyYears: 2,
+    sensors: ["DO", "Temperature", "pH", "NH3", "NO3", "EC/Salinity"],
+    features: [
+      "ESP32 DEVKIT V1 Controller",
+      "6-in-1 Water Quality Sensors (DO, Temp, pH, NH3, NO3, EC)",
+      "Premium Waterproof Enclosure",
+      "WiFi Antenna (2.4GHz)",
+      "Power Supply (5V/3A)",
+      "2 Year Warranty",
+    ],
   };
 
-  const currentKit = kits[selectedKit];
+  const [quantity, setQuantity] = useState(1);
+  const safeQty = Math.max(1, Number.isFinite(quantity) ? quantity : 1);
+  const subtotal = KIT.price * safeQty;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -92,7 +72,7 @@ export default function ProductPage({ onBuyNow, onBack }) {
                   <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Water Quality Sensors ({currentKit.sensors.join(", ")})
+                  6-in-1 Water Quality Sensors (DO, Temp, pH, NH3, NO3, EC)
                 </li>
                 <li className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,107 +149,91 @@ export default function ProductPage({ onBuyNow, onBack }) {
 
             <div className="bg-white rounded-2xl p-8 border-2 border-slate-200 shadow-lg space-y-6">
               <div>
-                <p className="text-sm font-semibold text-slate-600 mb-4">CHOOSE YOUR KIT</p>
-                
-                {/* Starter Kit */}
-                <div
-                  onClick={() => setSelectedKit("starter")}
-                  className={`relative p-6 rounded-xl border-2 cursor-pointer transition-all mb-4 ${
-                    selectedKit === "starter"
-                      ? "border-[#0B3D91] bg-blue-50"
-                      : "border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900">Starter Kit</h3>
-                      <p className="text-sm text-slate-600">Perfect for small ponds</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-3xl font-bold text-slate-900">RM 249</p>
-                      <p className="text-sm text-slate-500">one-time</p>
-                    </div>
-                  </div>
-                  <ul className="space-y-2 text-sm text-slate-700">
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      4 Core Sensors
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Dashboard Access
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      1 Year Warranty
-                    </li>
-                  </ul>
-                </div>
+                <p className="text-sm font-semibold text-slate-600 mb-4">SENSOR KIT</p>
 
-                {/* Pro Kit */}
-                <div
-                  onClick={() => setSelectedKit("pro")}
-                  className={`relative p-6 rounded-xl border-2 cursor-pointer transition-all ${
-                    selectedKit === "pro"
-                      ? "border-[#0B3D91] bg-blue-50"
-                      : "border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <div className="absolute -top-3 left-6">
-                    <span className="bg-gradient-to-r from-[#F59E0B] to-[#F97316] text-white text-xs font-bold px-3 py-1 rounded-full">
-                      RECOMMENDED
-                    </span>
-                  </div>
+                <div className="relative p-6 rounded-xl border-2 border-[#0B3D91] bg-blue-50">
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="text-xl font-bold text-slate-900">Pro Kit</h3>
+                      <h3 className="text-xl font-bold text-slate-900">{KIT.name}</h3>
                       <p className="text-sm text-slate-600">Complete monitoring solution</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-3xl font-bold text-slate-900">RM 599</p>
-                      <p className="text-sm text-slate-500">one-time</p>
+                      <p className="text-3xl font-bold text-slate-900">RM {KIT.price}</p>
                     </div>
                   </div>
+
                   <ul className="space-y-2 text-sm text-slate-700">
                     <li className="flex items-center gap-2">
                       <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      6 Advanced Sensors (NO3 + EC)
+                      All sensors included (DO, Temp, pH, NH3, NO3, EC)
                     </li>
                     <li className="flex items-center gap-2">
                       <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      Advanced Analytics
+                      Waterproof enclosure + power supply included
                     </li>
                     <li className="flex items-center gap-2">
                       <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      Priority Support
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      2 Year Warranty
+                      {KIT.warrantyYears} year warranty included
                     </li>
                   </ul>
+
+                  <div className="mt-5 flex items-center justify-between gap-3 rounded-xl bg-white border border-blue-200 px-4 py-3">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-600">Quantity</p>
+                      <p className="text-[11px] text-slate-500">Buy multiple kits for multiple ponds</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((q) => Math.max(1, (parseInt(q, 10) || 1) - 1))}
+                        className="w-9 h-9 rounded-lg border border-slate-300 bg-white text-slate-700 font-bold hover:bg-slate-50"
+                        aria-label="Decrease quantity"
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        min={1}
+                        value={safeQty}
+                        onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 1)}
+                        className="w-14 h-9 rounded-lg border border-slate-300 text-center text-sm font-semibold text-slate-900 outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((q) => Math.max(1, (parseInt(q, 10) || 1) + 1))}
+                        className="w-9 h-9 rounded-lg border border-slate-300 bg-white text-slate-700 font-bold hover:bg-slate-50"
+                        aria-label="Increase quantity"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between text-sm">
+                    <span className="text-slate-600">Subtotal</span>
+                    <span className="font-bold text-slate-900">RM {subtotal}</span>
+                  </div>
                 </div>
               </div>
 
               <button
-                onClick={() => onBuyNow({ kit: selectedKit, ...currentKit })}
+                onClick={() =>
+                  onBuyNow({
+                    ...KIT,
+                    unitPrice: KIT.price,
+                    quantity: safeQty,
+                    price: subtotal,
+                  })
+                }
                 className="w-full py-4 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1565C0] text-white font-bold text-lg hover:shadow-xl hover:scale-105 transition-all"
               >
-                Buy Now - RM {currentKit.price}
+                Buy Now - RM {subtotal}
               </button>
                    <button
                         type="button"
@@ -280,34 +244,10 @@ export default function ProductPage({ onBuyNow, onBack }) {
                 </button>
 
               <div className="flex items-center justify-center gap-6 pt-4 border-t border-slate-200 text-sm text-slate-600">
-                <div className="flex items-center gap-2">
-                  <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Free Shipping
-                </div>
-                <div className="flex items-center gap-2">
-                  <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  30-Day Returns
-                </div>
               </div>
             </div>
 
-            <div className="bg-slate-100 rounded-xl p-6">
-              <h3 className="font-bold text-slate-900 mb-4">All Features</h3>
-              <ul className="grid grid-cols-2 gap-3 text-sm">
-                {currentKit.features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <svg className="w-4 h-4 text-[#0B3D91] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-slate-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+           
           </div>
         </div>
       </div>
