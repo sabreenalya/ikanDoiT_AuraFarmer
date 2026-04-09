@@ -563,7 +563,15 @@ function LandingPage({ onCTA }) {
               <div>
                 <p className="text-sm font-medium text-slate-500 mb-3">Free</p>
 
-                <h3 className="text-5xl font-bold text-slate-900 mb-2">RM 0</h3>
+                <div className="flex items-end gap-3 mb-3">
+                  <span className="text-sm font-semibold text-slate-500">RM</span>
+                  <h3 className="text-5xl font-bold text-slate-900 leading-none">0</h3>
+                  <p className="text-[11px] text-slate-500 leading-tight pb-1">
+                    <span className="font-semibold">MYR /</span>
+                    <br />
+                    month
+                  </p>
+                </div>
                 <p className="text-sm text-slate-500 mb-6">For getting started</p>
 
                 <ul className="space-y-3 text-sm mb-8">
@@ -581,18 +589,18 @@ function LandingPage({ onCTA }) {
                     Feeding recommendations
                   </li>
 
-                  <li className="flex items-center gap-3 text-slate-400">
-                    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Live monitoring
+                    20 credits / month
                   </li>
 
                   <li className="flex items-center gap-3 text-slate-400">
                     <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    Alerts
+                    Sensor kits included
                   </li>
                 </ul>
               </div>
@@ -611,37 +619,55 @@ function LandingPage({ onCTA }) {
               <div>
                 <p className="text-sm font-medium text-emerald-600 mb-3">Basic</p>
 
-                <h3 className="text-5xl font-bold text-slate-900 mb-2">RM 249</h3>
-                <p className="text-sm text-slate-500 mb-6">
-                  Start monitoring your pond
-                </p>
+                <div className="flex items-end gap-3 mb-3">
+                  <span className="text-sm font-semibold text-slate-500">RM</span>
+                  <h3 className="text-5xl font-bold text-slate-900 leading-none">399</h3>
+                  <p className="text-[11px] text-slate-500 leading-tight pb-1">
+                    <span className="font-semibold">MYR /</span>
+                    <br />
+                    month 
+                  </p>
+                </div>
+                <p className="text-sm text-slate-500 mb-6">Upgrade your aquaculture management</p>
 
                 <ul className="space-y-3 text-sm mb-8">
                   <li className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Real-time monitoring
+                    5 sensor kits included
                   </li>
 
                   <li className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Smart feeding suggestions
+                    Biomass estimation
                   </li>
 
                   <li className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Instant alerts
+                    Feeding recommendations
+                  </li>
+
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    80 credits / month
+                  </li>
+
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Enhanced computer vision model
                   </li>
                 </ul>
 
-                <p className="text-xs text-emerald-600 font-medium mb-6">
-                  Save up to 30% on feed costs
-                </p>
+                <p className="text-xs text-emerald-600 font-medium mb-6">Ideal for small-to-mid ponds</p>
               </div>
 
               <button
@@ -663,36 +689,56 @@ function LandingPage({ onCTA }) {
               <div>
                 <p className="text-sm font-medium text-blue-600 mb-3">Premium</p>
 
-                <h3 className="text-5xl font-bold text-slate-900 mb-2">RM 599</h3>
-                <p className="text-sm text-slate-500 mb-6">
-                  Complete farm monitoring
-                </p>
+                <div className="flex items-end gap-3 mb-3">
+                  <span className="text-sm font-semibold text-slate-500">RM</span>
+                  <h3 className="text-5xl font-bold text-slate-900 leading-none">599</h3>
+                  <p className="text-[11px] text-slate-500 leading-tight pb-1">
+                    <span className="font-semibold">MYR /</span>
+                    <br />
+                    month 
+                  </p>
+                </div>
+                <p className="text-sm text-slate-500 mb-6">Maximize your aquaculture performance</p>
 
                 <ul className="space-y-3 text-sm mb-8">
                   <li className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Everything in Basic
+                    10 sensor kits included
                   </li>
 
                   <li className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Advanced insights (NO3 + salinity)
+                    Biomass estimation
                   </li>
 
                   <li className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Higher accuracy monitoring
+                    Feeding recommendations
+                  </li>
+
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    200 credits / month
+                  </li>
+
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Best computer vision model
                   </li>
                 </ul>
 
                 <p className="text-xs text-blue-600 font-medium mb-6">
-                  Best for scaling farms
+                  Best for large scale farms
                 </p>
               </div>
 
@@ -700,7 +746,7 @@ function LandingPage({ onCTA }) {
                 onClick={() => onCTA("signup")}
                 className="mt-auto w-full py-3.5 rounded-xl bg-[#0B3D91] text-white font-medium hover:bg-[#1565C0] transition"
               >
-                Buy Pro
+                Buy Premium
               </button>
             </div>
 
