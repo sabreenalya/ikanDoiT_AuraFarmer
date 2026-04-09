@@ -111,7 +111,6 @@ project-root/
 
 ### Prerequisites
 - Node.js 18+ recommended  
-- Bun (optional)
 
 ---
 
@@ -124,13 +123,6 @@ cd ikandoit_lovable
 ---
 
 ### 2) Install dependencies
-
-Using Bun:
-```bash
-bun install
-```
-
-Using npm:
 ```bash
 npm install
 ```
@@ -154,8 +146,6 @@ VITE_GEMINI_API_KEY=your_gemini_api_key
 ### 4) Run the app
 
 ```bash
-bun run dev
-# or
 npm run dev
 ```
 
@@ -186,8 +176,6 @@ Tables:
 ## ✅ Testing
 
 ```bash
-bun run test
-# or
 npm run test
 ```
 
