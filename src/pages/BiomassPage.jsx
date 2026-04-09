@@ -21,6 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import processedVideo from "../assets/videos/processed-demo.mp4";
 import redTilapiaImg from "../assets/images/red-tilapia.png";
 import nileTilapiaImg from "../assets/images/nile-tilapia.png";
@@ -226,6 +231,7 @@ export default function BiomassPage({ user, setLatestBiomass, onNavigateToFeedin
   const [useVideo, setUseVideo] = useState(false);
   const [videoResult, setVideoResult] = useState(null);
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [recordsExpanded, setRecordsExpanded] = useState(false);
 
   const videoResultRef = useRef(null);
   const resultCardRef = useRef(null);
@@ -745,26 +751,70 @@ export default function BiomassPage({ user, setLatestBiomass, onNavigateToFeedin
           <h3 className="font-semibold text-slate-700 mb-3">
             Recent Records
           </h3>
-          <div className="space-y-2">
-            {history.map((r) => (
-              <div
-                key={r.id}
-                className="flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0"
-              >
-                <div>
-                  <p className="text-sm font-medium text-slate-700">
-                    {r.species} — {r.fishCount} fish
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    {new Date(r.timestamp).toLocaleString()}
-                  </p>
-                </div>
-                <span className="font-bold text-[#0B3D91]">
-                  {r.biomass} kg
-                </span>
-              </div>
-            ))}
-          </div>
+          <Collapsible open={recordsExpanded} onOpenChange={setRecordsExpanded}>
+            <div className="space-y-2">
+              {history.slice(0, 3).map((r, idx, arr) => {
+                const hasMore = history.length > 3;
+                const isLastVisible = !hasMore && idx === arr.length - 1;
+                return (
+                  <div
+                    key={r.id}
+                    className={`flex items-center justify-between py-2.5 border-b border-slate-50 ${
+                      isLastVisible ? "border-b-0" : ""
+                    }`}
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">
+                        {r.species} — {r.fishCount} fish
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {new Date(r.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                    <span className="font-bold text-[#0B3D91]">
+                      {r.biomass} kg
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {history.length > 3 && (
+              <>
+                <CollapsibleTrigger
+                  className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  {recordsExpanded
+                    ? `Hide older records ▲`
+                    : `Show ${history.length - 3} more records ▼`}
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="mt-2 space-y-2">
+                    {history.slice(3).map((r, idx, arr) => (
+                      <div
+                        key={r.id}
+                        className={`flex items-center justify-between py-2.5 border-b border-slate-50 ${
+                          idx === arr.length - 1 ? "border-b-0" : ""
+                        }`}
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-slate-700">
+                            {r.species} — {r.fishCount} fish
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            {new Date(r.timestamp).toLocaleString()}
+                          </p>
+                        </div>
+                        <span className="font-bold text-[#0B3D91]">
+                          {r.biomass} kg
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </>
+            )}
+          </Collapsible>
         </Card>
       )}
     </div>
