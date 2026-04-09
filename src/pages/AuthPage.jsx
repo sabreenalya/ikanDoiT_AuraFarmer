@@ -63,17 +63,7 @@ export default function AuthPage({ onAuth, initialMode = "login", onBack }) {
       
     } catch (e) {
       console.error("Auth error:", e);
-      
-      // Handle network errors or when Supabase is not configured
-      if (e.message?.includes("fetch") || e.message?.includes("Failed") || supabaseUrl.includes("placeholder")) {
-        // Demo fallback mode
-        setSuccess("Demo mode activated! Logging in...");
-        setTimeout(() => {
-          onAuth({ id: "demo-user", email });
-        }, 1000);
-      } else {
-        setError(e.message || "An error occurred. Please try again.");
-      }
+      setError(e.message || "An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
