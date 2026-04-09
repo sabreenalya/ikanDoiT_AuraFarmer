@@ -1,12 +1,14 @@
 <h1 align="center">ikanDoiT</h1>
 
 <p align="center">
-  Smart Aquaculture Management System
+  <strong>Smart Aquaculture Management System</strong>
 </p>
 
 <p align="center">
   <em>Empowering Smarter Aquaculture Through Vision.</em>
 </p>
+
+<br/>
 
 <p align="center">
   <img src="https://img.shields.io/badge/VITE-Frontend-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
@@ -18,33 +20,46 @@
   <img src="https://img.shields.io/badge/GEMINI_AI-Google-4285F4?style=for-the-badge&logo=google&logoColor=white" />
 </p>
 
-## 📖 About ikanDoiT
-ikanDoiT is a smart aquaculture management platform designed to help fish farmers optimize feeding, monitor water quality, and estimate biomass efficiently using AI and IoT technologies.
+---
 
-By combining computer vision (YOLO), real-time sensor data, and AI-driven insights, ikanDoiT eliminates guesswork and enables data-driven decision-making for modern fish farming.
+## 📖 About ikanDoiT
+
+ikanDoiT is a **smart aquaculture management platform** designed to help fish farmers:
+
+- Optimize feeding  
+- Monitor water quality  
+- Estimate biomass efficiently  
+
+Using **AI and IoT technologies**, ikanDoiT eliminates guesswork and enables **data-driven decision-making** for modern fish farming.
+
+---
 
 ## ✨ Features
 
 ### 💧 Real-Time Water Quality Monitoring
 - Tracks key parameters:
-    - Dissolved Oxygen (DO)
-    - pH
-    - Temperature
-    - Ammonia (NH₃)
-    - Nitrate (NO₃)
-    - Salinity
-- Continuous monitoring via IoT sensors (ESP32)
+  - Dissolved Oxygen (DO)
+  - pH
+  - Temperature
+  - Ammonia (NH₃)
+  - Nitrate (NO₃)
+  - Salinity
+- Continuous monitoring via **IoT sensors (ESP32)**
 - Alerts for abnormal conditions
+
+---
 
 ### 🐟 Biomass Estimation via Computer Vision
 - Upload pond videos to estimate fish size and biomass
-- YOLO-based fish detection and measurement
+- **YOLO-based** fish detection and measurement
 - Automatic calculation of:
-    - Average fish length
-    - Estimated weight  
-    - Total biomass
-- Tracks actual vs predicted fish weight progression to support planning and decision-making.
-- Displays latest biomass logs in Recent Records
+  - Average fish length
+  - Estimated weight  
+  - Total biomass  
+- Tracks **actual vs predicted growth trends**
+- Displays latest biomass logs in **Recent Records**
+
+---
 
 ### 🍽️ Feeding Optimization
 - Automatic feed calculation based on biomass
@@ -52,9 +67,13 @@ By combining computer vision (YOLO), real-time sensor data, and AI-driven insigh
 - Feeding history tracking and analytics
 - Monthly feed cost estimation
 
+---
+
 ### 🔐 Authentication (Supabase)
 - Email/password login and signup
 - Graceful demo fallback when Supabase is not configured
+
+---
 
 ## 🛠️ Tech Stack
 
@@ -69,7 +88,7 @@ By combining computer vision (YOLO), real-time sensor data, and AI-driven insigh
 | AI (optional) | Google Gemini API |
 | Testing | Vitest + Playwright |
 
-## 📁 Project Structure
+---
 
 ## 📁 Project Structure
 
@@ -88,11 +107,15 @@ project-root/
 │   └── main.tsx             # React bootstrap
 ```
 
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ recommended
-- Bun (optional) — this repo includes a `bun.lockb`
+- Node.js 18+ recommended  
+- Bun (optional)
+
+---
 
 ### 1) Clone the repository
 ```bash
@@ -100,7 +123,10 @@ git clone https://github.com/<your-username>/<your-repo>.git
 cd ikandoit_lovable
 ```
 
+---
+
 ### 2) Install dependencies
+
 Using Bun:
 ```bash
 bun install
@@ -111,97 +137,92 @@ Using npm:
 npm install
 ```
 
-### 3) Configure environment variables (optional)
-This project runs in demo mode without Supabase.
+---
 
-1. Copy the template:
+### 3) Configure environment variables (optional)
+
 ```bash
 cp .env.example .env
 ```
 
-2. Fill in values in `.env`:
-
 ```env
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# Optional (AI recommendations)
 VITE_GEMINI_API_KEY=your_gemini_api_key
 ```
 
+---
+
 ### 4) Run the app
-Using Bun:
+
 ```bash
 bun run dev
-```
-
-Using npm:
-```bash
+# or
 npm run dev
 ```
 
-Vite is configured to run on `http://localhost:8080`.
+Runs on: **http://localhost:8080**
 
-### Build & Preview
-Using Bun:
-```bash
-bun run build
-bun run preview
-```
-
-Using npm:
-```bash
-npm run build
-npm run preview
-```
+---
 
 ## 🗄️ Supabase Notes (Optional)
 
-When configured, the app uses Supabase for auth, persistence, and realtime subscriptions.
+- Uses Supabase for auth, persistence, and realtime
+- Works in **demo mode** without configuration
 
-Tables referenced in the codebase:
-- `biomass_records` (uses a `timestamp` column)
+Tables:
+- `biomass_records`
 - `feeding_logs`
 - `feed_prices`
 
-If those tables don’t exist, the UI will still run in demo mode (mock data + local state), but persistence/realtime will not work.
+---
 
 ## 🔒 Security
-- Secrets are read only from `.env` (`.env` is gitignored).
-- Do not hardcode API keys.
-- Use Supabase Row Level Security (RLS) policies before deploying.
+
+- Secrets stored in `.env` (**gitignored**)  
+- No hardcoded credentials  
+- Use **Supabase RLS policies** before deployment  
+
+---
 
 ## ✅ Testing
-Unit tests:
+
 ```bash
 bun run test
-```
-
-Or:
-```bash
+# or
 npm run test
 ```
 
-Playwright (end-to-end):
+E2E:
 ```bash
 npx playwright install
 npx playwright test
 ```
 
+---
+
 ## 📸 Screenshots
 Coming soon
 
+---
+
 ## 🗺️ Future Roadmap
-- Real sensor ingestion pipeline (MQTT/HTTP) and true realtime parameter streaming
-- Improve the trained YOLO model for more accurate fish shape detection and length estimation. 
-- Notifications (email/SMS/WhatsApp) for critical pond alerts
+
+- Real sensor ingestion pipeline (MQTT/HTTP)  
+- Improve YOLO model for better fish detection and length accuracy  
+- Notifications (email/SMS/WhatsApp)  
+
+---
 
 ## 🤝 Contributing
-1. Fork the repository
-2. Create a branch: `git checkout -b feature/my-feature`
-3. Commit: `git commit -m "Add my feature"`
-4. Push: `git push origin feature/my-feature`
-5. Open a Pull Request
+
+1. Fork the repository  
+2. Create a branch  
+3. Commit changes  
+4. Push and open PR  
+
+---
 
 ## 📄 License
-No license file is included yet. If you plan to open-source this repository, add a `LICENSE` (e.g., MIT) before publishing.
+
+No license yet — consider adding **MIT License** for open-source use.
