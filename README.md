@@ -1,14 +1,12 @@
 <h1 align="center">ikanDoiT</h1>
 
-<p align="center">
+<h2 align="center">
   <strong>Smart Aquaculture Management System</strong>
-</p>
+</h2>
 
 <p align="center">
   <em>Empowering Smarter Aquaculture Through Vision.</em>
 </p>
-
-<br/>
 
 <p align="center">
   <img src="https://img.shields.io/badge/VITE-Frontend-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
@@ -165,7 +163,7 @@ Runs on: **http://localhost:8080**
 
 ---
 
-## 🗄️ Supabase Notes (Optional)
+## 🗄️ Supabase Notes
 
 - Uses Supabase for auth, persistence, and realtime
 - Works in **demo mode** without configuration
@@ -201,28 +199,8 @@ npx playwright test
 
 ---
 
-## 📸 Screenshots
-Coming soon
-
----
-
 ## 🗺️ Future Roadmap
 
 - Real sensor ingestion pipeline (MQTT/HTTP)  
 - Improve YOLO model for better fish detection and length accuracy  
 - Notifications (email/SMS/WhatsApp)  
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository  
-2. Create a branch  
-3. Commit changes  
-4. Push and open PR  
-
----
-
-## 📄 License
-
-No license yet — consider adding **MIT License** for open-source use.
