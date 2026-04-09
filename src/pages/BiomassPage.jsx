@@ -22,9 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import processedVideo from "../assets/videos/processed-demo.mp4";
-import redTilapiaImg from "../assets/images/Red Tilapia.png";
-import nileTilapiaImg from "../assets/images/Nile Tilapia.png";
-import africanCatfishImg from "../assets/images/African Catfish.png";
+import redTilapiaImg from "../assets/images/red-tilapia.png";
+import nileTilapiaImg from "../assets/images/nile-tilapia.png";
+import africanCatfishImg from "../assets/images/african-catfish.png";
 
 // Species-specific growth formula constants (FishBase)
 const SPECIES_CONSTANTS = {
