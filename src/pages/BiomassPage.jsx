@@ -221,7 +221,7 @@ function SpeciesOptionLabel({ commonName }) {
   );
 }
 
-export default function BiomassPage({ user, setLatestBiomass, onNavigateToFeeding }) {
+export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory, onNavigateToFeeding }) {
   const [fishCount, setFishCount] = useState(500);
   const [avgLength, setAvgLength] = useState(20);
   const [species, setSpecies] = useState("Red Tilapia");
@@ -232,6 +232,13 @@ export default function BiomassPage({ user, setLatestBiomass, onNavigateToFeedin
   const [videoResult, setVideoResult] = useState(null);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [recordsExpanded, setRecordsExpanded] = useState(false);
+
+  useEffect(() => {
+    if (typeof setBiomassHistory === "function") {
+      setBiomassHistory((prev) => (Array.isArray(prev) && prev.length ? prev : DEMO_SEED_HISTORY));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const videoResultRef = useRef(null);
   const resultCardRef = useRef(null);
@@ -275,9 +282,13 @@ export default function BiomassPage({ user, setLatestBiomass, onNavigateToFeedin
       species,
       timestamp: new Date().toISOString(),
     };
+    const recordWithId = { ...r, id: Date.now() };
     setResult(r);
     setLatestBiomass(r);
-    setHistory((h) => [{ ...r, id: Date.now() }, ...h.slice(0, 29)]);
+    setHistory((h) => [recordWithId, ...h.slice(0, 29)]);
+    if (typeof setBiomassHistory === "function") {
+      setBiomassHistory((h) => [recordWithId, ...(Array.isArray(h) ? h : []).slice(0, 29)]);
+    }
     setUseVideo(false);
     if (!supabaseUrl.includes("placeholder")) {
       supabase.from("biomass_records").insert([{ user_id: user?.id, ...r }]);

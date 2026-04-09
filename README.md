@@ -179,7 +179,7 @@ Tables:
 npm run test
 ```
 
-E2E (End-to-End, browser):
+E2E:
 ```bash
 npx playwright install
 npx playwright test

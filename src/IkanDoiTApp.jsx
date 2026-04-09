@@ -11,8 +11,6 @@ import OrderSuccessPage from "./pages/OrderSuccessPage";
 import OrderTrackingPage from "./pages/OrderTrackingPage";
 import DeviceConnectionPage from "./pages/DeviceConnectionPage";
 
-import { makeFirstPondParams } from "./shared/pondScenarios";
-
 // ─── Navigation items ─────────────────────────────────────────────────────────
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
@@ -623,7 +621,7 @@ function LandingPage({ onCTA }) {
 
                 <div className="flex items-end gap-3 mb-3">
                   <span className="text-sm font-semibold text-slate-500">RM</span>
-                  <h3 className="text-5xl font-bold text-slate-900 leading-none">499</h3>
+                  <h3 className="text-5xl font-bold text-slate-900 leading-none">399</h3>
                   <p className="text-[11px] text-slate-500 leading-tight pb-1">
                     <span className="font-semibold">MYR /</span>
                     <br />
@@ -793,18 +791,12 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [latestBiomass, setLatestBiomass] = useState(null);
-  const [biomassHistory, setBiomassHistory] = useState([]);
   const [params, setParams] = useState({
     DO: 6.8, pH: 7.2, Temp: 28.5, NH3: 0.018, NO3: 9.2, Salinity: 4.5,
   });
-  const [devices, setDevices] = useState([]);
-  const [activeDeviceIdx, setActiveDeviceIdx] = useState(0);
   const [selectedKit, setSelectedKit] = useState(null);
   const [orderInfo, setOrderInfo] = useState(null);
   const [connectedDevice, setConnectedDevice] = useState(null);
-
-  const activeDevice = devices[activeDeviceIdx] || null;
-  const effectiveParams = activeDevice?.params || params;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -863,17 +855,11 @@ export default function App() {
 
   const handleDeviceConnected = (device) => {
     setConnectedDevice(device);
-    if (!devices.length) {
-      setDevices([{ ...device, params: makeFirstPondParams() }]);
-      setActiveDeviceIdx(0);
-    }
     setActivePage("water");
   };
 
   const handleDisconnectDevice = () => {
     setConnectedDevice(null);
-    setDevices([]);
-    setActiveDeviceIdx(0);
     // Stay on water page, will show empty state
   };
 
@@ -882,32 +868,18 @@ export default function App() {
   };
 
   const pageContent = {
-    dashboard: (
-      <DashboardPage
-        user={user}
-        params={effectiveParams}
-        setParams={setParams}
-        latestBiomass={latestBiomass}
-        biomassHistory={biomassHistory}
-        devices={devices}
-        activeDeviceIdx={activeDeviceIdx}
-      />
-    ),
+    dashboard: <DashboardPage user={user} params={params} setParams={setParams} />,
     water: <WaterPage 
       user={user} 
       params={params} 
       setParams={setParams} 
       connectedDevice={connectedDevice}
-      devices={devices}
-      setDevices={setDevices}
-      activeDeviceIdx={activeDeviceIdx}
-      setActiveDeviceIdx={setActiveDeviceIdx}
       onBuySensor={() => setActivePage("product")}
       onConnectDevice={() => setActivePage("connect-device")}
       onDisconnectDevice={handleDisconnectDevice}
     />,
-    biomass: <BiomassPage user={user} setLatestBiomass={setLatestBiomass} setBiomassHistory={setBiomassHistory} onNavigateToFeeding={() => setActivePage("feeding")} />,
-    feeding: <FeedingPage user={user} latestBiomass={latestBiomass} params={effectiveParams} />,
+    biomass: <BiomassPage user={user} setLatestBiomass={setLatestBiomass} onNavigateToFeeding={() => setActivePage("feeding")} />,
+    feeding: <FeedingPage user={user} latestBiomass={latestBiomass} params={params} />,
     product: <ProductPage onBuyNow={handleBuyNow} onBack={handleBackToWater} />,
     checkout: <CheckoutPage cart={selectedKit} onBack={() => setActivePage("product")} onComplete={handlePlaceOrder} />,
     "order-success": <OrderSuccessPage order={orderInfo} onGoToDashboard={handleGoToOrderTracking} />,
