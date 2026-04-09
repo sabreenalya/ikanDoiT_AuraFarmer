@@ -1,8 +1,8 @@
 <h1 align="center">ikanDoiT</h1>
 
-<h2 align="center">
+<p align="center">
   <strong>Smart Aquaculture Management System</strong>
-</h2>
+</p>
 
 <p align="center">
   <em>Empowering Smarter Aquaculture Through Vision.</em>
