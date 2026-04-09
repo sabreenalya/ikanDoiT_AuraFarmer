@@ -1,14 +1,21 @@
-# ikanDoiT
-Smart Aquaculture Management System
+<h1 align="center">ikanDoiT</h1>
 
-<p>
-  ![Vite](https://img.shields.io/badge/VITE-Frontend-646CFF?style=for-the-badge&logo=vite&logoColor=white)
-![React](https://img.shields.io/badge/REACT-Library-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![Tailwind](https://img.shields.io/badge/TAILWIND-CSS-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)
-![shadcn/ui](https://img.shields.io/badge/SHADCN%2FUI-Components-black?style=for-the-badge&logo=radixui&logoColor=white)
-![Supabase](https://img.shields.io/badge/SUPABASE-Backend-3ECF8E?style=for-the-badge&logo=supabase&logoColor=black)
-![Recharts](https://img.shields.io/badge/RECHARTS-Charts-FF6384?style=for-the-badge)
-![Gemini AI](https://img.shields.io/badge/GEMINI_AI-Google-4285F4?style=for-the-badge&logo=google&logoColor=white)
+<p align="center">
+  Smart Aquaculture Management System
+</p>
+
+<p align="center">
+  <em>Empowering Smarter Aquaculture Through Vision.</em>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/VITE-Frontend-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
+  <img src="https://img.shields.io/badge/REACT-Library-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/TAILWIND-CSS-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white" />
+  <img src="https://img.shields.io/badge/SHADCN%2FUI-Components-black?style=for-the-badge&logo=radixui&logoColor=white" />
+  <img src="https://img.shields.io/badge/SUPABASE-Backend-3ECF8E?style=for-the-badge&logo=supabase&logoColor=black" />
+  <img src="https://img.shields.io/badge/RECHARTS-Charts-FF6384?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/GEMINI_AI-Google-4285F4?style=for-the-badge&logo=google&logoColor=white" />
 </p>
 
 ## 📖 About ikanDoiT
