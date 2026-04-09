@@ -1,37 +1,49 @@
 # ikanDoiT
 Smart Aquaculture Management System
 
-Vite · React · Tailwind · shadcn/ui (Radix) · Supabase · Recharts · Gemini AI (optional)
+<p>
+  ![Vite](https://img.shields.io/badge/VITE-Frontend-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![React](https://img.shields.io/badge/REACT-Library-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Tailwind](https://img.shields.io/badge/TAILWIND-CSS-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![shadcn/ui](https://img.shields.io/badge/SHADCN%2FUI-Components-black?style=for-the-badge&logo=radixui&logoColor=white)
+![Supabase](https://img.shields.io/badge/SUPABASE-Backend-3ECF8E?style=for-the-badge&logo=supabase&logoColor=black)
+![Recharts](https://img.shields.io/badge/RECHARTS-Charts-FF6384?style=for-the-badge)
+![Gemini AI](https://img.shields.io/badge/GEMINI_AI-Google-4285F4?style=for-the-badge&logo=google&logoColor=white)
+</p>
 
 ## 📖 About ikanDoiT
-ikanDoiT is a web dashboard for modern fish farmers to monitor pond conditions, estimate biomass, and optimize feeding — with an optional IoT sensor kit workflow and AI-powered recommendations.
+ikanDoiT is a smart aquaculture management platform designed to help fish farmers optimize feeding, monitor water quality, and estimate biomass efficiently using AI and IoT technologies.
 
-This repository contains the frontend application (Vite + React) and a demo-friendly UX that still works even when Supabase is not configured.
+By combining computer vision (YOLO), real-time sensor data, and AI-driven insights, ikanDoiT eliminates guesswork and enables data-driven decision-making for modern fish farming.
 
 ## ✨ Features
 
-### 💧 Water Quality Monitoring
-- Live-style dashboard with key parameters (DO, pH, temperature, NH₃, NO₃, salinity)
-- Alerts with clear “warning” vs “critical” guidance
-- Historical trends and parameter breakdowns
-- Optional AI recommendations (Google Gemini) when `VITE_GEMINI_API_KEY` is provided
+### 💧 Real-Time Water Quality Monitoring
+- Tracks key parameters:
+    - Dissolved Oxygen (DO)
+    - pH
+    - Temperature
+    - Ammonia (NH₃)
+    - Nitrate (NO₃)
+    - Salinity
+- Continuous monitoring via IoT sensors (ESP32)
+- Alerts for abnormal conditions
 
-### 🐟 Biomass Estimation
-- Species-aware length → weight estimation
-- Video upload UX (detection flow is simulated in this repo)
-- Weight-over-time chart with a short growth simulation horizon
-- Recent biomass record history
+### 🐟 Biomass Estimation via Computer Vision
+- Upload pond videos to estimate fish size and biomass
+- YOLO-based fish detection and measurement
+- Automatic calculation of:
+    - Average fish length
+    - Estimated weight  
+    - Total biomass
+- Tracks actual vs predicted fish weight progression to support planning and decision-making.
+- Displays latest biomass logs in Recent Records
 
-### 🍽️ Feeding Management
-- Auto-generated feeding schedule that adapts to biomass, weight, temperature, and logs
-- Daily/monthly cost estimation (feed price per kg)
-- Checklist workflow + alerts for missed feedings
-- Supabase persistence + realtime updates when configured
-
-### 📡 Device & Sensor Kit Flow (Demo)
-- Product page for sensor kit selection
-- Checkout + order confirmation + order tracking UX
-- Device connection onboarding (Device ID format validation)
+### 🍽️ Feeding Optimization
+- Automatic feed calculation based on biomass
+- Smart feeding schedules
+- Feeding history tracking and analytics
+- Monthly feed cost estimation
 
 ### 🔐 Authentication (Supabase)
 - Email/password login and signup
@@ -52,18 +64,21 @@ This repository contains the frontend application (Vite + React) and a demo-frie
 
 ## 📁 Project Structure
 
+## 📁 Project Structure
+
 ```text
-public/
-src/
-	assets/              # Images, videos
-	components/          # Shared components + shadcn/ui primitives
-	hooks/               # App hooks
-	lib/                 # Utilities (e.g. cn / class merge)
-	pages/               # App pages (Dashboard, Water, Biomass, Feeding, Shop)
-		feeding/           # Feeding module (hooks, components, utils, types)
-	shared/              # aquaCore (Supabase client + shared UI helpers)
-	App.tsx              # Router setup
-	main.tsx             # React bootstrap
+project-root/
+├── public/
+├── src/
+│   ├── assets/              # Images, videos
+│   ├── components/          # Shared components + shadcn/ui primitives
+│   ├── hooks/               # App hooks
+│   ├── lib/                 # Utilities (e.g. cn / class merge)
+│   ├── pages/               # App pages (Dashboard, Water, Biomass, Feeding, Shop)
+│   │   └── feeding/         # Feeding module (hooks, components, utils, types)
+│   ├── shared/              # aquaCore (Supabase client + shared UI helpers)
+│   ├── App.tsx              # Router setup
+│   └── main.tsx             # React bootstrap
 ```
 
 ## 🚀 Getting Started
@@ -171,9 +186,7 @@ Coming soon
 
 ## 🗺️ Future Roadmap
 - Real sensor ingestion pipeline (MQTT/HTTP) and true realtime parameter streaming
-- Multi-pond support (pond switching, per-pond history)
-- Proper video fish detection service + model integration (replacing the simulated flow)
-- Reports export (PDF/CSV) for water/feeding/biomass
+- Improve the trained YOLO model for more accurate fish shape detection and length estimation. 
 - Notifications (email/SMS/WhatsApp) for critical pond alerts
 
 ## 🤝 Contributing
