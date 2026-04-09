@@ -406,24 +406,14 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
               <tr className="text-xs text-slate-500 uppercase border-b border-slate-100">
                 <th className="pb-2 text-left font-semibold">Date</th>
                 <th className="pb-2 text-right font-semibold">Fed (kg)</th>
-                <th className="pb-2 text-right font-semibold">% Biomass</th>
-                <th className="pb-2 text-right font-semibold">vs Target</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {historyLogs.map((r, i) => {
-                const pct  = ((r.feed_amount / biomassKg) * 100).toFixed(1);
-                const diff = r.feed_amount - dailyTotal;
                 return (
                   <tr key={i} className="hover:bg-slate-50 transition-colors">
                     <td className="py-2.5 text-slate-600">{r.date}</td>
                     <td className="py-2.5 text-right font-semibold text-[#0B3D91]">{r.feed_amount}</td>
-                    <td className="py-2.5 text-right text-slate-500">{pct}%</td>
-                    <td className="py-2.5 text-right">
-                      {diff > 0.5  ? <span className="text-xs text-red-600 font-medium">+{diff.toFixed(2)} kg</span>
-                       : diff < -0.5 ? <span className="text-xs text-amber-600 font-medium">{diff.toFixed(2)} kg</span>
-                       : <span className="text-xs text-emerald-600 font-medium">On target</span>}
-                    </td>
                   </tr>
                 );
               })}
