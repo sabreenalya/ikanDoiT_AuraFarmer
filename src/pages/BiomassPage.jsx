@@ -8,7 +8,9 @@ import {
   YAxis,
   Tooltip,
   Legend,
+  ReferenceArea,
 } from "recharts";
+import { CalendarDays } from "lucide-react";
 import {
   Card,
   supabase,
@@ -21,6 +23,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Collapsible,
   CollapsibleContent,
@@ -91,39 +102,6 @@ const computeDailyGainG = (points) => {
 };
 
 const FIXED_BIOMASS_KG = 250;
-
-const makeDemoRecord = ({ daysAgo, avgLength, fishCount, species }) => {
-  const avgWeight = calculateSpeciesWeight(avgLength, species);
-  const biomass = FIXED_BIOMASS_KG;
-  const timestamp = addDays(new Date(), -daysAgo).toISOString();
-  return {
-    id: `demo-${species}-${daysAgo}`,
-    avgLength,
-    avgWeight,
-    biomass,
-    fishCount,
-    species,
-    timestamp,
-  };
-};
-
-// Prototype seed data so the trend + simulation is visible immediately.
-const DEMO_SEED_HISTORY = [
-  // Seed points are chosen to ramp smoothly into the default avgLength (20cm)
-  // so the chart doesn't look like it suddenly jumps/drops on the latest point.
-  makeDemoRecord({ daysAgo: 18, avgLength: 19.0, fishCount: 500, species: "Red Tilapia" }),
-  makeDemoRecord({ daysAgo: 12, avgLength: 19.5, fishCount: 500, species: "Red Tilapia" }),
-  makeDemoRecord({ daysAgo: 6, avgLength: 19.8, fishCount: 500, species: "Red Tilapia" }),
-  makeDemoRecord({ daysAgo: 0, avgLength: 20.0, fishCount: 500, species: "Red Tilapia" }),
-
-  makeDemoRecord({ daysAgo: 14, avgLength: 19.0, fishCount: 500, species: "Nile Tilapia" }),
-  makeDemoRecord({ daysAgo: 7, avgLength: 19.5, fishCount: 500, species: "Nile Tilapia" }),
-  makeDemoRecord({ daysAgo: 0, avgLength: 20.0, fishCount: 500, species: "Nile Tilapia" }),
-
-  makeDemoRecord({ daysAgo: 14, avgLength: 20.5, fishCount: 500, species: "African Catfish" }),
-  makeDemoRecord({ daysAgo: 7, avgLength: 21.0, fishCount: 500, species: "African Catfish" }),
-  makeDemoRecord({ daysAgo: 0, avgLength: 21.5, fishCount: 500, species: "African Catfish" }),
-];
 
 const SPECIES_META = [
   {
@@ -221,24 +199,301 @@ function SpeciesOptionLabel({ commonName }) {
   );
 }
 
-export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory, onNavigateToFeeding }) {
-  const [fishCount, setFishCount] = useState(500);
+const BATCH_STORAGE_KEY = "ikandoit-fish-batches-v1";
+const EMPTY_PONDS = [];
+const DEFAULT_TARGET_MIN_G = 450;
+const DEFAULT_TARGET_MAX_G = 600;
+
+const localDateString = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const daysSinceDate = (dateString, today = new Date()) => {
+  if (!isValidISODate(dateString)) return null;
+  const [year, month, day] = dateString.split("-").map(Number);
+  const start = Date.UTC(year, month - 1, day);
+  const end = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  return Math.floor((end - start) / 86400000);
+};
+
+const isValidISODate = (value) => {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+};
+
+const formatDateDMY = (isoDate) => {
+  if (!isValidISODate(isoDate)) return "";
+  const [year, month, day] = isoDate.split("-");
+  return `${day}/${month}/${year}`;
+};
+
+const formatLongDateMY = (isoDate) => {
+  if (!isValidISODate(isoDate)) return "Date not set";
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString("en-MY", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};
+
+const getBatchAge = (isoDate, today = new Date()) => {
+  if (!isValidISODate(isoDate)) return null;
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const startDate = new Date(year, month - 1, day);
+  const currentDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  let months = (currentDate.getFullYear() - year) * 12 + currentDate.getMonth() - (month - 1);
+  const addMonths = (date, monthCount) => {
+    const firstOfTargetMonth = new Date(date.getFullYear(), date.getMonth() + monthCount, 1);
+    const lastDayOfTargetMonth = new Date(firstOfTargetMonth.getFullYear(), firstOfTargetMonth.getMonth() + 1, 0).getDate();
+    return new Date(firstOfTargetMonth.getFullYear(), firstOfTargetMonth.getMonth(), Math.min(date.getDate(), lastDayOfTargetMonth));
+  };
+  let monthAnchor = addMonths(startDate, months);
+  if (monthAnchor > currentDate) {
+    months -= 1;
+    monthAnchor = addMonths(startDate, months);
+  }
+  const remainingDays = Math.round((Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()) - Date.UTC(monthAnchor.getFullYear(), monthAnchor.getMonth(), monthAnchor.getDate())) / 86400000);
+  return { months, days: remainingDays };
+};
+
+const formatBatchAge = (age) => {
+  if (!age) return null;
+  const monthLabel = age.months === 1 ? "month" : "months";
+  const dayLabel = age.days === 1 ? "day" : "days";
+  return `${age.months} ${monthLabel} ${age.days} ${dayLabel}`;
+};
+
+const defaultBatch = ({ id, pondId, stockingDate, species = "Red Tilapia" }) => ({
+  id,
+  pondId,
+  species,
+  stockingDate,
+  status: "Active",
+  stockedFishCount: null,
+  targetMinWeightG: DEFAULT_TARGET_MIN_G,
+  targetMaxWeightG: DEFAULT_TARGET_MAX_G,
+  biomassRecords: [],
+  weightMeasurements: [],
+  harvestDetails: null,
+});
+
+const defaultPond2Batch = () => {
+  const stockingDate = new Date();
+  stockingDate.setDate(stockingDate.getDate() - 45);
+  return defaultBatch({
+    id: "batch-pond-2-initial",
+    pondId: "pond-2",
+    stockingDate: localDateString(stockingDate),
+  });
+};
+
+export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory, biomassHistory = [], onNavigateToFeeding, devices = EMPTY_PONDS, activeDeviceIdx = 0 }) {
+  const batchStorageKey = `${BATCH_STORAGE_KEY}:${user?.id || "local"}`;
   const [avgLength, setAvgLength] = useState(20);
-  const [species, setSpecies] = useState("Red Tilapia");
   const [result, setResult] = useState(null);
-  const [history, setHistory] = useState(() => DEMO_SEED_HISTORY);
+  const history = Array.isArray(biomassHistory) ? biomassHistory : [];
   const [simulating, setSimulating] = useState(false);
   const [useVideo, setUseVideo] = useState(false);
   const [videoResult, setVideoResult] = useState(null);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [recordsExpanded, setRecordsExpanded] = useState(false);
+  const availablePonds = useMemo(() => {
+    const actualPonds = devices.slice(0, 2).map((pond, index) => ({
+      id: String(pond.id ?? `pond-${index + 1}`),
+      name: index === 0 ? "Pond 1" : "Pond 2",
+    }));
+    if (!actualPonds.length) actualPonds.push({ id: "pond-1", name: "Pond 1" });
+    if (actualPonds.length < 2) actualPonds.push({ id: "pond-2", name: "Pond 2" });
+    return actualPonds;
+  }, [devices]);
+  const [selectedPondId, setSelectedPondId] = useState(() => {
+    const pondIndex = Math.min(activeDeviceIdx, 1);
+    const pond = devices[pondIndex];
+    return pond ? String(pond.id ?? `pond-${pondIndex + 1}`) : "pond-1";
+  });
+  const [batchStore, setBatchStore] = useState({});
+  const [batchDateDraft, setBatchDateDraft] = useState("");
+  const [speciesDraft, setSpeciesDraft] = useState("Red Tilapia");
+  const [stockedFishDraft, setStockedFishDraft] = useState("");
+  const [targetMinDraft, setTargetMinDraft] = useState(String(DEFAULT_TARGET_MIN_G));
+  const [targetMaxDraft, setTargetMaxDraft] = useState(String(DEFAULT_TARGET_MAX_G));
+  const [newBatchDateDraft, setNewBatchDateDraft] = useState("");
+  const [newBatchSpecies, setNewBatchSpecies] = useState("Red Tilapia");
+  const [newBatchFishCount, setNewBatchFishCount] = useState("");
+  const [newTargetMinDraft, setNewTargetMinDraft] = useState(String(DEFAULT_TARGET_MIN_G));
+  const [newTargetMaxDraft, setNewTargetMaxDraft] = useState(String(DEFAULT_TARGET_MAX_G));
+  const [batchError, setBatchError] = useState("");
+  const [batchNotice, setBatchNotice] = useState("");
+  const [newBatchError, setNewBatchError] = useState("");
+  const [newBatchDialogOpen, setNewBatchDialogOpen] = useState(false);
+  const [expandedBatchId, setExpandedBatchId] = useState(null);
+  const [batchStoreReady, setBatchStoreReady] = useState(false);
+  const [today, setToday] = useState(() => new Date());
 
   useEffect(() => {
-    if (typeof setBiomassHistory === "function") {
-      setBiomassHistory((prev) => (Array.isArray(prev) && prev.length ? prev : DEMO_SEED_HISTORY));
+    try {
+      const stored = window.localStorage.getItem(batchStorageKey);
+      const parsed = stored ? JSON.parse(stored) : {};
+      const pond1Id = availablePonds[0]?.id || "pond-1";
+      const pond2Id = availablePonds[1]?.id || "pond-2";
+      const migrated = { ...(parsed && typeof parsed === "object" ? parsed : {}) };
+      if (!migrated[pond1Id] && migrated["default-pond"]) migrated[pond1Id] = migrated["default-pond"];
+      if (!migrated[pond2Id] && migrated["pond-2"]) migrated[pond2Id] = migrated["pond-2"];
+      if (!migrated[pond2Id]?.active) migrated[pond2Id] = { ...(migrated[pond2Id] || {}), active: { ...defaultPond2Batch(), pondId: pond2Id }, history: migrated[pond2Id]?.history || [] };
+      setBatchStore(migrated);
+      if (!stored || JSON.stringify(migrated) !== JSON.stringify(parsed)) {
+        window.localStorage.setItem(batchStorageKey, JSON.stringify(migrated));
+      }
+    } catch {
+      setBatchNotice("Batch details will remain available for this session only because local storage could not be read.");
+      const pond2Id = availablePonds[1]?.id || "pond-2";
+      setBatchStore({ [pond2Id]: { active: { ...defaultPond2Batch(), pondId: pond2Id }, history: [] } });
+    } finally {
+      setBatchStoreReady(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [batchStorageKey, availablePonds]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setToday(new Date()), 60000);
+    return () => window.clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const pondIndex = Math.min(activeDeviceIdx, 1);
+    const activePond = devices[pondIndex];
+    if (activePond) setSelectedPondId(String(activePond.id ?? `pond-${pondIndex + 1}`));
+  }, [devices, activeDeviceIdx]);
+
+  const selectedPond = availablePonds.find((pond) => pond.id === selectedPondId) || availablePonds[0];
+  const selectedPondData = batchStore[selectedPond?.id] || { active: null, history: [] };
+  const activeBatch = selectedPondData.active || null;
+  const selectedSpecies = activeBatch?.species || "Red Tilapia";
+  const targetMinG = Number(activeBatch?.targetMinWeightG ?? DEFAULT_TARGET_MIN_G);
+  const targetMaxG = Number(activeBatch?.targetMaxWeightG ?? DEFAULT_TARGET_MAX_G);
+  const hasUnsavedBatchDate = batchDateDraft !== (activeBatch?.stockingDate || "");
+  const hasUnsavedSpecies = speciesDraft !== (activeBatch?.species || "Red Tilapia");
+  const hasUnsavedStockedFish = (stockedFishDraft === "" ? null : Number(stockedFishDraft)) !== (activeBatch?.stockedFishCount ?? null);
+  const hasUnsavedTargets = Number(targetMinDraft) !== targetMinG || Number(targetMaxDraft) !== targetMaxG;
+  const batchAge = activeBatch?.stockingDate ? getBatchAge(activeBatch.stockingDate, today) : null;
+  const batchAgeDays = activeBatch?.stockingDate ? daysSinceDate(activeBatch.stockingDate, today) : null;
+
+  useEffect(() => {
+    setBatchDateDraft(activeBatch?.stockingDate || "");
+    setSpeciesDraft(activeBatch?.species || "Red Tilapia");
+    setStockedFishDraft(activeBatch?.stockedFishCount == null ? "" : String(activeBatch.stockedFishCount));
+    setTargetMinDraft(String(activeBatch?.targetMinWeightG ?? DEFAULT_TARGET_MIN_G));
+    setTargetMaxDraft(String(activeBatch?.targetMaxWeightG ?? DEFAULT_TARGET_MAX_G));
+    setBatchError("");
+    setExpandedBatchId(null);
+  }, [selectedPond?.id, activeBatch?.id]);
+
+  useEffect(() => {
+    setBatchNotice("");
+  }, [selectedPond?.id]);
+
+  function persistBatchStore(updated) {
+    setBatchStore(updated);
+    try {
+      window.localStorage.setItem(batchStorageKey, JSON.stringify(updated));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function saveBatchDetails() {
+    setBatchNotice("");
+    const isoDate = batchDateDraft;
+    if (!isValidISODate(isoDate)) {
+      setBatchError("Choose a valid stocking date.");
+      return;
+    }
+    if (isoDate > localDateString(today)) {
+      setBatchError("Stocking date cannot be in the future.");
+      return;
+    }
+    const min = Number(targetMinDraft);
+    const max = Number(targetMaxDraft);
+    const stockedFishCount = stockedFishDraft === "" ? null : Number(stockedFishDraft);
+    if (stockedFishCount !== null && (!Number.isInteger(stockedFishCount) || stockedFishCount <= 0)) {
+      setBatchError("Total fish stocked must be a positive whole number.");
+      return;
+    }
+    if (!Number.isFinite(min) || min <= 0 || !Number.isFinite(max) || max < min) {
+      setBatchError("Target weights must be positive, and the maximum must be at least the minimum.");
+      return;
+    }
+    if (!activeBatch) {
+      setBatchError("Start a batch before saving batch details.");
+      return;
+    }
+    const updated = {
+      ...batchStore,
+      [selectedPond.id]: {
+        ...selectedPondData,
+        active: { ...activeBatch, stockingDate: isoDate, species: speciesDraft, stockedFishCount, targetMinWeightG: min, targetMaxWeightG: max },
+      },
+    };
+    const saved = persistBatchStore(updated);
+    setBatchNotice(saved ? "Batch details saved." : "Saved for this session, but browser storage was unavailable.");
+    setBatchError("");
+  }
+
+  function createNewBatch() {
+    setNewBatchError("");
+    const stockingDate = newBatchDateDraft;
+    const min = Number(newTargetMinDraft);
+    const max = Number(newTargetMaxDraft);
+    const stockedFishCount = Number(newBatchFishCount);
+    if (!isValidISODate(stockingDate)) {
+      setNewBatchError("Choose a valid stocking date.");
+      return;
+    }
+    if (stockingDate > localDateString(today)) {
+      setNewBatchError("Stocking date cannot be in the future.");
+      return;
+    }
+    if (!Number.isFinite(min) || min <= 0 || !Number.isFinite(max) || max < min) {
+      setNewBatchError("Target weights must be positive, and the maximum must be at least the minimum.");
+      return;
+    }
+    if (!Number.isInteger(stockedFishCount) || stockedFishCount <= 0) {
+      setNewBatchError("Enter a positive whole number for total fish stocked.");
+      return;
+    }
+    const previousBatches = selectedPondData.history || [];
+    const archivedBatch = activeBatch ? {
+      ...activeBatch,
+      status: ["Harvested", "Cancelled"].includes(activeBatch.status) ? activeBatch.status : "Previous",
+      closedAt: new Date().toISOString(),
+    } : null;
+    const batchId = globalThis.crypto?.randomUUID?.() || `batch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const nextBatch = {
+      ...defaultBatch({ id: batchId, pondId: selectedPond.id, stockingDate, species: newBatchSpecies }),
+      stockedFishCount,
+      targetMinWeightG: min,
+      targetMaxWeightG: max,
+      createdAt: new Date().toISOString(),
+    };
+    const updated = {
+      ...batchStore,
+      [selectedPond.id]: {
+        active: nextBatch,
+        history: archivedBatch ? [...previousBatches, archivedBatch] : previousBatches,
+      },
+    };
+    const saved = persistBatchStore(updated);
+    setNewBatchDialogOpen(false);
+    setNewBatchDateDraft("");
+    setBatchNotice(saved ? "New batch started. The previous batch and its measurements are preserved." : "New batch started for this session, but browser storage was unavailable.");
+    setBatchError("");
+  }
 
   const videoResultRef = useRef(null);
   const resultCardRef = useRef(null);
@@ -257,6 +512,12 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
     }
   }, [videoResult]);
 
+  useEffect(() => {
+    setResult(null);
+    setVideoResult(null);
+    setUploadedFile(null);
+  }, [selectedPond?.id, activeBatch?.id]);
+
   // Scroll to result card when calculation completes
   useEffect(() => {
     if (result && resultCardRef.current) {
@@ -272,26 +533,48 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
   }, [result]);
 
   function calculate() {
-    const weight = calculateSpeciesWeight(avgLength, species);
+    if (!activeBatch) return;
+    const weight = calculateSpeciesWeight(avgLength, selectedSpecies);
     const biomass = FIXED_BIOMASS_KG;
+    const timestamp = new Date().toISOString();
+    const recordId = globalThis.crypto?.randomUUID?.() || `measurement-${Date.now()}`;
     const r = {
       avgLength,
       avgWeight: weight,
       biomass,
-      fishCount,
-      species,
-      timestamp: new Date().toISOString(),
+      fishCount: null,
+      species: selectedSpecies,
+      timestamp,
+      pondId: selectedPond?.id,
+      batchId: activeBatch?.id || null,
+      id: recordId,
     };
-    const recordWithId = { ...r, id: Date.now() };
     setResult(r);
     setLatestBiomass(r);
-    setHistory((h) => [recordWithId, ...h.slice(0, 29)]);
     if (typeof setBiomassHistory === "function") {
-      setBiomassHistory((h) => [recordWithId, ...(Array.isArray(h) ? h : []).slice(0, 29)]);
+      setBiomassHistory((h) => [r, ...(Array.isArray(h) ? h : []).slice(0, 99)]);
     }
+    const measurement = { id: recordId, batchId: activeBatch.id, pondId: selectedPond.id, timestamp, weightG: Number((weight * 1000).toFixed(2)) };
+    const currentPondData = batchStore[selectedPond.id] || { active: activeBatch, history: [] };
+    const updatedBatch = {
+      ...activeBatch,
+      biomassRecords: [...(activeBatch.biomassRecords || []), r],
+      weightMeasurements: [...(activeBatch.weightMeasurements || []), measurement],
+    };
+    const updated = { ...batchStore, [selectedPond.id]: { ...currentPondData, active: updatedBatch } };
+    persistBatchStore(updated);
     setUseVideo(false);
     if (!supabaseUrl.includes("placeholder")) {
-      supabase.from("biomass_records").insert([{ user_id: user?.id, ...r }]);
+      supabase.from("biomass_records").insert([{
+        user_id: user?.id,
+        pond_id: r.pondId,
+        species: r.species,
+        avg_length: r.avgLength,
+        avg_weight: r.avgWeight,
+        fish_count: null,
+        biomass: r.biomass,
+        timestamp: r.timestamp,
+      }]);
     }
   }
 
@@ -313,12 +596,16 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
   }
 
   const weightTimeSeries = useMemo(() => {
-    const actualRecords = history
-      .filter((r) => r?.species === species)
-      .map((r) => ({
-        date: new Date(r.timestamp),
-        weightG: Number(((r.avgWeight || 0) * 1000).toFixed(2)),
-      }))
+    const batchMeasurements = [...(activeBatch?.weightMeasurements || [])];
+    const legacyBatchRecords = (activeBatch?.biomassRecords || [])
+      .filter((record) => record?.batchId === activeBatch?.id)
+      .map((record) => ({ id: record.id, timestamp: record.timestamp, weightG: Number(((record.avgWeight || 0) * 1000).toFixed(2)) }));
+    const appBatchRecords = history
+      .filter((record) => record?.batchId === activeBatch?.id)
+      .map((record) => ({ id: record.id, timestamp: record.timestamp, weightG: Number(((record.avgWeight || 0) * 1000).toFixed(2)) }));
+    const measurementsById = new Map([...batchMeasurements, ...legacyBatchRecords, ...appBatchRecords].map((record) => [record.id || record.timestamp, record]));
+    const actualRecords = Array.from(measurementsById.values())
+      .map((record) => ({ date: new Date(record.timestamp), weightG: Number(record.weightG) }))
       .filter((p) => Number.isFinite(p.weightG) && !Number.isNaN(p.date.getTime()))
       .sort((a, b) => a.date.getTime() - b.date.getTime());
 
@@ -351,8 +638,8 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
       .flatMap((d) => [d.actualWeightG, d.simulatedWeightG])
       .filter((v) => typeof v === "number" && Number.isFinite(v));
 
-    const yMin = allWeights.length ? Math.min(...allWeights) : 0;
-    const yMax = allWeights.length ? Math.max(...allWeights) : 0;
+    const yMin = Math.min(...allWeights, targetMinG);
+    const yMax = Math.max(...allWeights, targetMaxG);
     const yPad = Math.max(5, (yMax - yMin) * 0.15);
 
     const STEP = 20;
@@ -372,8 +659,18 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
       dailyGainG,
       yDomain,
       yTicks,
+      targetMinG,
+      targetMaxG,
     };
-  }, [history, species]);
+  }, [activeBatch, history, targetMinG, targetMaxG]);
+
+  const currentBatchRecords = useMemo(() => {
+    if (!activeBatch) return [];
+    const savedRecords = activeBatch.biomassRecords || [];
+    const appRecords = history.filter((record) => record?.batchId === activeBatch.id);
+    return Array.from(new Map([...savedRecords, ...appRecords].map((record) => [record.id || record.timestamp, record])).values())
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }, [activeBatch, history]);
 
   return (
     <div className="space-y-6">
@@ -406,43 +703,164 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
         </p>
       </div>
 
+      <Card className="p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h3 className="font-semibold text-slate-700">Fish Batch Information</h3>
+            <p className="mt-1 text-xs text-slate-500">Track the production cycle for each pond.</p>
+          </div>
+          <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${batchAgeDays !== null && batchAgeDays >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${batchAgeDays !== null && batchAgeDays >= 0 ? "bg-emerald-500" : "bg-slate-400"}`} />
+            {batchAgeDays !== null && batchAgeDays >= 0 ? "Active Batch" : "Not Started"}
+          </span>
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-slate-600">Pond</label>
+            <Select value={selectedPondId} onValueChange={setSelectedPondId}>
+              <SelectTrigger className="h-10 rounded-xl border-slate-200 text-sm"><SelectValue placeholder="Select pond" /></SelectTrigger>
+              <SelectContent>{availablePonds.map((pond) => <SelectItem key={pond.id} value={pond.id}>{pond.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-slate-600">Fish Species</label>
+            <Select value={speciesDraft} onValueChange={(value) => { setSpeciesDraft(value); setBatchError(""); }}>
+              <SelectTrigger className="h-10 rounded-xl border-slate-200 text-sm"><SelectValue placeholder="Select species" /></SelectTrigger>
+              <SelectContent>{SPECIES_META.map((option) => <SelectItem key={option.common} value={option.common}><SpeciesOptionLabel commonName={option.common} /></SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label htmlFor="batch-stocking-date" className="mb-1.5 block text-xs font-semibold text-slate-600">Stocking Date</label>
+            <input id="batch-stocking-date" type="date" lang="en-GB" max={localDateString(today)} value={batchDateDraft}
+              onChange={(event) => { setBatchDateDraft(event.target.value); setBatchError(""); setBatchNotice(""); }}
+              className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400" aria-invalid={Boolean(batchError)} />
+          </div>
+          <div>
+            <label htmlFor="stocked-fish-count" className="mb-1.5 block text-xs font-semibold text-slate-600">Total Fish Stocked</label>
+            <input id="stocked-fish-count" type="number" min="1" step="1" inputMode="numeric" value={stockedFishDraft}
+              onChange={(event) => { setStockedFishDraft(event.target.value); setBatchError(""); }}
+              placeholder="Enter fish count" className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400" />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-slate-600">Target Harvest Weight (g/fish)</label>
+            <div className="flex items-center gap-2">
+              <input aria-label="Minimum target harvest weight in grams per fish" type="number" min="1" value={targetMinDraft}
+                onChange={(event) => { setTargetMinDraft(event.target.value); setBatchError(""); }}
+                className="h-10 w-full min-w-0 rounded-xl border border-slate-200 px-2 text-sm outline-none focus:border-blue-400" />
+              <span className="text-xs text-slate-400">to</span>
+              <input aria-label="Maximum target harvest weight in grams per fish" type="number" min="1" value={targetMaxDraft}
+                onChange={(event) => { setTargetMaxDraft(event.target.value); setBatchError(""); }}
+                className="h-10 w-full min-w-0 rounded-xl border border-slate-200 px-2 text-sm outline-none focus:border-blue-400" />
+            </div>
+            <p className="mt-1 text-[10px] text-slate-400">Market target range; adjust for your buyer.</p>
+          </div>
+        </div>
+
+        <div className="mt-5 border-t border-blue-100 pt-4">
+          <div className="flex items-center gap-3 rounded-xl bg-blue-50 px-4 py-4 sm:px-5">
+            <CalendarDays className="h-6 w-6 shrink-0 text-[#0B3D91]" aria-hidden="true" />
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Current Batch Age</p>
+              <p className="text-2xl font-bold leading-tight text-slate-900">
+                {batchAgeDays !== null && batchAgeDays >= 0 ? formatBatchAge(batchAge) : "Not started"}
+              </p>
+              <p className="mt-1 text-sm text-slate-600">
+                {activeBatch?.stockingDate ? `Stocked on ${formatLongDateMY(activeBatch.stockingDate)}` : "Set a stocking date to start this batch."}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {(hasUnsavedBatchDate || hasUnsavedSpecies || hasUnsavedStockedFish || hasUnsavedTargets) && !batchError && <p className="mt-3 text-xs text-amber-700">You have unsaved batch details.</p>}
+        {batchError && <p role="alert" className="mt-3 text-xs font-medium text-red-600">{batchError}</p>}
+        {batchNotice && <p role="status" className="mt-3 text-xs text-emerald-700">{batchNotice}</p>}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Button type="button" onClick={saveBatchDetails} disabled={!activeBatch || (!hasUnsavedBatchDate && !hasUnsavedSpecies && !hasUnsavedStockedFish && !hasUnsavedTargets)} className="rounded-xl bg-[#0B3D91] hover:bg-[#092f70]">Save Batch Details</Button>
+          <Button type="button" variant="outline" onClick={() => {
+            setNewBatchDateDraft("");
+            setNewBatchSpecies(selectedSpecies);
+            setNewBatchFishCount("");
+            setNewTargetMinDraft(String(targetMinG));
+            setNewTargetMaxDraft(String(targetMaxG));
+            setNewBatchError("");
+            setNewBatchDialogOpen(true);
+          }} className="rounded-xl border-slate-200 text-slate-600">Start New Batch</Button>
+        </div>
+        <p className="mt-2 text-[11px] text-slate-400">Target weights are farmer-configured market goals, not a universal biological standard.</p>
+
+        <div className="mt-6 border-t border-slate-100 pt-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-slate-700">Batch History — {selectedPond?.name}</h4>
+            <span className="text-xs text-slate-400">{selectedPondData.history?.length || 0} previous</span>
+          </div>
+          {selectedPondData.history?.length ? (
+            <div className="space-y-2">
+              {[...selectedPondData.history].slice().reverse().map((batch) => {
+                const isExpanded = expandedBatchId === batch.id;
+                const records = [
+                  ...(batch.biomassRecords || []),
+                  ...history.filter((record) => record?.batchId === batch.id),
+                ].filter((record, index, list) => list.findIndex((item) => item.id === record.id) === index);
+                const measurements = batch.weightMeasurements || [];
+                const duration = daysSinceDate(batch.stockingDate, batch.closedAt ? new Date(batch.closedAt) : today);
+                return (
+                  <div key={batch.id} className="overflow-hidden rounded-xl border border-slate-100">
+                    <button type="button" onClick={() => setExpandedBatchId(isExpanded ? null : batch.id)} aria-expanded={isExpanded}
+                      className="flex w-full flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-left hover:bg-slate-50">
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-slate-700">{batch.species || "Red Tilapia"} · {formatDateDMY(batch.stockingDate) || "Date unavailable"}</span>
+                        <span className="block text-xs text-slate-400">{batch.id} · {duration !== null ? `${duration} days` : "Duration unavailable"}</span>
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">{batch.status || "Previous"}</span>
+                    </button>
+                    {isExpanded && (
+                      <div className="space-y-2 border-t border-slate-100 bg-slate-50/70 px-3 py-3 text-xs">
+                        <p className="text-slate-600">Pond: {selectedPond?.name} · Target: {batch.targetMinWeightG ?? DEFAULT_TARGET_MIN_G}–{batch.targetMaxWeightG ?? DEFAULT_TARGET_MAX_G} g/fish</p>
+                        {batch.stockedFishCount != null && <p className="text-slate-600">Total fish stocked: {batch.stockedFishCount.toLocaleString()}</p>}
+                        {batch.harvestDetails && <p className="text-slate-600">Harvest details: {typeof batch.harvestDetails === "string" ? batch.harvestDetails : JSON.stringify(batch.harvestDetails)}</p>}
+                        <p className="font-semibold text-slate-600">Biomass calculations ({records.length})</p>
+                        {records.length ? records.map((record) => <p key={record.id} className="text-slate-500">{new Date(record.timestamp).toLocaleString("en-MY")} · {(Number(record.avgWeight) * 1000).toFixed(1)} g/fish · {record.biomass} kg</p>) : <p className="text-slate-400">No biomass calculations recorded for this batch.</p>}
+                        <p className="font-semibold text-slate-600">Weight measurements ({measurements.length})</p>
+                        {measurements.length ? measurements.map((measurement) => <p key={measurement.id} className="text-slate-500">{new Date(measurement.timestamp).toLocaleString("en-MY")} · {Number(measurement.weightG).toFixed(1)} g/fish</p>) : <p className="text-slate-400">No separate weight measurements recorded.</p>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : <p className="rounded-xl bg-slate-50 px-3 py-4 text-center text-xs text-slate-400">No previous batches for this pond yet.</p>}
+        </div>
+      </Card>
+
+      <Dialog open={newBatchDialogOpen} onOpenChange={setNewBatchDialogOpen}>
+        <DialogContent className="rounded-2xl sm:max-w-md">
+          <DialogHeader><DialogTitle>Start a new batch in {selectedPond?.name}?</DialogTitle>
+            <DialogDescription>Confirm the new production cycle details. The current batch and its measurements will remain in Batch History; it will not be marked harvested.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div><label htmlFor="new-batch-date" className="mb-1 block text-xs font-semibold text-slate-600">Stocking Date</label>
+              <input id="new-batch-date" type="date" lang="en-GB" max={localDateString(today)} value={newBatchDateDraft} onChange={(event) => setNewBatchDateDraft(event.target.value)} className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400" /></div>
+            <div><label htmlFor="new-batch-fish-count" className="mb-1 block text-xs font-semibold text-slate-600">Total Fish Stocked</label>
+              <input id="new-batch-fish-count" type="number" min="1" step="1" inputMode="numeric" value={newBatchFishCount} onChange={(event) => setNewBatchFishCount(event.target.value)} placeholder="Enter fish count" className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400" /></div>
+            <div><label className="mb-1 block text-xs font-semibold text-slate-600">Fish Species</label>
+              <Select value={newBatchSpecies} onValueChange={setNewBatchSpecies}><SelectTrigger className="h-10 rounded-xl border-slate-200 text-sm"><SelectValue /></SelectTrigger><SelectContent>{SPECIES_META.map((option) => <SelectItem key={option.common} value={option.common}><SpeciesOptionLabel commonName={option.common} /></SelectItem>)}</SelectContent></Select></div>
+            <div><span className="mb-1 block text-xs font-semibold text-slate-600">Target Harvest Weight (g/fish)</span><div className="flex items-center gap-2"><input aria-label="New batch minimum target weight in grams per fish" type="number" min="1" value={newTargetMinDraft} onChange={(event) => setNewTargetMinDraft(event.target.value)} className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm" /><span className="text-xs text-slate-400">to</span><input aria-label="New batch maximum target weight in grams per fish" type="number" min="1" value={newTargetMaxDraft} onChange={(event) => setNewTargetMaxDraft(event.target.value)} className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm" /></div></div>
+            {newBatchError && <p role="alert" className="text-xs font-medium text-red-600">{newBatchError}</p>}
+          </div>
+          <DialogFooter><Button type="button" variant="outline" onClick={() => setNewBatchDialogOpen(false)}>Cancel</Button><Button type="button" className="bg-[#0B3D91] hover:bg-[#092f70]" onClick={createNewBatch}>Create Batch</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="grid md:grid-cols-5 gap-6 auto-rows-fr">
-        {/* Left: Input Card (spans 3 cols for 60/40 split) */}
+        {/* Left: Biomass calculation workflow */}
         <Card className="md:col-span-3 p-5 h-full">
           <h3 className="font-semibold text-slate-700 mb-4">
-            Fish Data Input
+            Biomass Calculation
           </h3>
           <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                Species
-              </label>
-              <Select value={species} onValueChange={(v) => setSpecies(v)}>
-                <SelectTrigger className="w-full h-auto min-h-10 px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:ring-0 focus:ring-offset-0 focus:border-blue-400 [&>span]:line-clamp-none">
-                  <SelectValue placeholder="Select species" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SPECIES_META.map((s) => (
-                    <SelectItem key={s.common} value={s.common}>
-                      <SpeciesOptionLabel commonName={s.common} />
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                Total Fish in Pond
-              </label>
-              <input
-                type="number"
-                value={fishCount}
-                onChange={(e) =>
-                  setFishCount(parseInt(e.target.value) || 0)
-                }
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-blue-400 outline-none"
-              />
-            </div>
+            <p className="text-xs text-slate-500">Active batch species: <span className="font-semibold text-slate-700">{selectedSpecies}</span></p>
+            {!activeBatch && <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700">Start a batch for this pond before calculating biomass.</p>}
             <div
               className={`p-3 rounded-xl border ${
                 useVideo ? "border-blue-200 bg-blue-50" : "border-slate-200"
@@ -517,7 +935,7 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
             <button
               ref={calculateButtonRef}
               onClick={calculate}
-              disabled={!videoResult}
+              disabled={!videoResult || !activeBatch || !batchStoreReady || hasUnsavedSpecies}
               className="w-full py-3 bg-[#0B3D91] text-white rounded-xl font-bold text-sm hover:bg-[#1565C0] transition-all shadow disabled:opacity-60"
             >
               Calculate Biomass →
@@ -537,11 +955,6 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
               <div className="space-y-3">
                 {[
                   { label: "Species", value: result.species },
-                  {
-                    label: "Fish Count",
-                    value: result.fishCount.toLocaleString(),
-                    unit: "fish",
-                  },
                   { label: "Avg. Length", value: result.avgLength, unit: "cm" },
                   {
                     label: "Avg. Weight",
@@ -577,7 +990,7 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
               </div>
               <div className="mt-4 p-3 bg-white/60 rounded-xl">
                 <p className="text-xs text-slate-500 text-center">
-                  Formula: Weight = {getSpeciesConstants(species).A} × Length<sup>{getSpeciesConstants(species).B}</sup> ({species})
+                  Formula: Weight = {getSpeciesConstants(result.species).A} × Length<sup>{getSpeciesConstants(result.species).B}</sup> ({result.species})
                 </p>
               </div>
               </Card>
@@ -666,21 +1079,26 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
         </div>
       </div>
 
+      {/* Weight Over Time Graph */}
       <Card className="p-5">
         <h3 className="font-semibold text-slate-700 mb-1 text-sm">
-          Weight Over Time ({species})
+          Weight Over Time ({selectedSpecies})
         </h3>
         <p className="text-xs text-slate-500 mb-4">
-          Actual points come from each biomass calculation. Future values are simulated from the observed trend.
+          {weightTimeSeries.actualCount > 0
+            ? "Actual points come from this batch's biomass calculations. Dashed values are 14-day projections from the observed trend."
+            : "No weight measurements are recorded for this batch yet. The green band shows your configured harvest target."}
         </p>
 
         <ResponsiveContainer width="100%" height={220}>
           <LineChart
-            key={species}
+            key={`${selectedPond?.id}:${activeBatch?.id || "none"}`}
             data={weightTimeSeries.chartData}
             margin={{ top: 10, right: 10, bottom: 10, left: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+            <ReferenceArea y1={weightTimeSeries.targetMinG} y2={weightTimeSeries.targetMaxG} fill="#22c55e" fillOpacity={0.12}
+              stroke="#16a34a" strokeOpacity={0.45} label={{ value: `Target Harvest Range: ${weightTimeSeries.targetMinG}–${weightTimeSeries.targetMaxG} g`, position: "insideTopRight", fill: "#15803d", fontSize: 10 }} />
             <XAxis
               dataKey="date"
               tick={{ fontSize: 10, fill: "#94a3b8" }}
@@ -706,7 +1124,7 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
               labelFormatter={(value) => `${value}`}
               formatter={(v, name) => {
                 if (v == null) return ["", ""];
-                const label = name === "simulatedWeightG" ? "Simulated" : "Actual";
+                const label = name === "simulatedWeightG" ? "Projected" : "Actual";
                 return [`${Number(v).toFixed(1)}g`, label];
               }}
               contentStyle={{
@@ -716,7 +1134,7 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
               }}
             />
             <Legend
-              formatter={(value) => (value === "simulatedWeightG" ? "Simulated" : "Actual")}
+              formatter={(value) => (value === "simulatedWeightG" ? "Projected" : "Actual")}
             />
             <Line
               type="monotone"
@@ -757,15 +1175,15 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
         </div>
       </Card>
 
-      {history.length > 0 && (
+      {currentBatchRecords.length > 0 && (
         <Card className="p-5">
           <h3 className="font-semibold text-slate-700 mb-3">
-            Recent Records
+            Recent Records · {selectedPond?.name} · {selectedSpecies}
           </h3>
           <Collapsible open={recordsExpanded} onOpenChange={setRecordsExpanded}>
             <div className="space-y-2">
-              {history.slice(0, 3).map((r, idx, arr) => {
-                const hasMore = history.length > 3;
+              {currentBatchRecords.slice(0, 3).map((r, idx, arr) => {
+                const hasMore = currentBatchRecords.length > 3;
                 const isLastVisible = !hasMore && idx === arr.length - 1;
                 return (
                   <div
@@ -776,10 +1194,10 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
                   >
                     <div>
                       <p className="text-sm font-medium text-slate-700">
-                        {r.species} — {r.fishCount} fish
+                        {r.species} · {(Number(r.avgWeight) * 1000).toFixed(1)} g/fish
                       </p>
                       <p className="text-xs text-slate-400">
-                        {new Date(r.timestamp).toLocaleString()}
+                        {new Date(r.timestamp).toLocaleString("en-MY")}
                       </p>
                     </div>
                     <span className="font-bold text-[#0B3D91]">
@@ -790,18 +1208,18 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
               })}
             </div>
 
-            {history.length > 3 && (
+            {currentBatchRecords.length > 3 && (
               <>
                 <CollapsibleTrigger
                   className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                 >
                   {recordsExpanded
                     ? `Hide older records ▲`
-                    : `Show ${history.length - 3} more records ▼`}
+                    : `Show ${currentBatchRecords.length - 3} more records ▼`}
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="mt-2 space-y-2">
-                    {history.slice(3).map((r, idx, arr) => (
+                    {currentBatchRecords.slice(3).map((r, idx, arr) => (
                       <div
                         key={r.id}
                         className={`flex items-center justify-between py-2.5 border-b border-slate-50 ${
@@ -810,10 +1228,10 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
                       >
                         <div>
                           <p className="text-sm font-medium text-slate-700">
-                            {r.species} — {r.fishCount} fish
+                            {r.species} · {(Number(r.avgWeight) * 1000).toFixed(1)} g/fish
                           </p>
                           <p className="text-xs text-slate-400">
-                            {new Date(r.timestamp).toLocaleString()}
+                            {new Date(r.timestamp).toLocaleString("en-MY")}
                           </p>
                         </div>
                         <span className="font-bold text-[#0B3D91]">

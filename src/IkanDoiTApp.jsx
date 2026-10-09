@@ -908,6 +908,9 @@ export default function App() {
         user={user}
         setLatestBiomass={setLatestBiomass}
         setBiomassHistory={setBiomassHistory}
+        biomassHistory={biomassHistory}
+        devices={devices}
+        activeDeviceIdx={activeDeviceIdx}
         onNavigateToFeeding={() => setActivePage("feeding")}
       />
     ),
