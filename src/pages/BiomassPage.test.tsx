@@ -66,6 +66,11 @@ describe("BiomassPage batch management", () => {
     await waitFor(() => expect(screen.getByLabelText("Stocking Date")).not.toHaveValue(""));
     const saved = JSON.parse(window.localStorage.getItem(storageKey) || "{}");
     expect(saved["pond-2"].active.stockingDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(saved["pond-2"].active.stockingDate).toBe(isoDaysAgo(30));
+    expect(saved["pond-2"].active.biomassRecords).toHaveLength(4);
+    expect(saved["pond-2"].active.biomassRecords.every((record: { isSample?: boolean }) => !record.isSample)).toBe(true);
+    expect(saved["pond-2"].active.sampleDataVersion).toBe(3);
+    expect(saved["pond-2"].active.biomassRecords.map((record: { avgWeight: number }) => Math.round(record.avgWeight * 1000))).toEqual([95, 112, 129, 140]);
     expect(saved["pond-2"].active.species).toBe("Red Tilapia");
     expect(saved["pond-2"].active.targetMinWeightG).toBe(450);
     expect(saved["pond-2"].active.targetMaxWeightG).toBe(600);
