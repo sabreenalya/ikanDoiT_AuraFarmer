@@ -38,6 +38,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import processedVideo from "../assets/videos/processed-demo.mp4";
+import processedVideoSmallFish from "../assets/videos/processed-demo2.mp4";
 import redTilapiaImg from "../assets/images/red-tilapia.png";
 import nileTilapiaImg from "../assets/images/nile-tilapia.png";
 import africanCatfishImg from "../assets/images/african-catfish.png";
@@ -101,7 +102,6 @@ const computeDailyGainG = (points) => {
   return num / den; // g/day
 };
 
-const FIXED_BIOMASS_KG = 250;
 
 const SPECIES_META = [
   {
@@ -627,15 +627,19 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
 
   function calculate() {
     if (!activeBatch) return;
-    const weight = calculateSpeciesWeight(avgLength, selectedSpecies);
-    const biomass = FIXED_BIOMASS_KG;
+    const calculationLength = videoResult?.avgLength ?? avgLength;
+    const weight = calculateSpeciesWeight(calculationLength, selectedSpecies);
+    const fishCount = Number.isInteger(activeBatch.stockedFishCount) && activeBatch.stockedFishCount > 0
+      ? activeBatch.stockedFishCount
+      : 500;
+    const biomass = videoResult?.biomassKg ?? Number((weight * fishCount).toFixed(1));
     const timestamp = new Date().toISOString();
     const recordId = globalThis.crypto?.randomUUID?.() || `measurement-${Date.now()}`;
     const r = {
-      avgLength,
+      avgLength: calculationLength,
       avgWeight: weight,
       biomass,
-      fishCount: null,
+      fishCount,
       species: selectedSpecies,
       timestamp,
       pondId: selectedPond?.id,
@@ -664,7 +668,7 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
         species: r.species,
         avg_length: r.avgLength,
         avg_weight: r.avgWeight,
-        fish_count: null,
+        fish_count: r.fishCount,
         biomass: r.biomass,
         timestamp: r.timestamp,
       }]);
@@ -672,16 +676,22 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
   }
 
   function simulateVideo() {
+    setResult(null);
     setSimulating(true);
     setTimeout(() => {
-      // Keep the user's chosen avgLength stable (no random jumps) while we
-      // simulate the detection/processed video experience.
-      const stableLength = Number.isFinite(avgLength) && avgLength > 0 ? avgLength : 20;
-      setAvgLength(parseFloat(Number(stableLength).toFixed(1)));
-      // Simulate processed video URL (in real app, this would be from server)
+      const baseName = uploadedFile?.name?.replace(/\.[^.]+$/, "").toLowerCase();
+      const isSmallFishVideo = baseName === "fishvideo2";
+      const isFullSizeFishVideo = baseName === "fishvideo1";
+      const detectedLength = isSmallFishVideo ? 12 : isFullSizeFishVideo ? 20 : Number.isFinite(avgLength) && avgLength > 0 ? avgLength : 20;
+      setAvgLength(parseFloat(Number(detectedLength).toFixed(1)));
+      const fishCount = Number.isInteger(activeBatch?.stockedFishCount) && activeBatch.stockedFishCount > 0
+        ? activeBatch.stockedFishCount
+        : 500;
       setVideoResult({
         url: URL.createObjectURL(uploadedFile),
-        processedUrl: processedVideo,
+        processedUrl: isSmallFishVideo ? processedVideoSmallFish : processedVideo,
+        avgLength: detectedLength,
+        biomassKg: Number((calculateSpeciesWeight(detectedLength, selectedSpecies) * fishCount).toFixed(1)),
       });
       setSimulating(false);
       setUseVideo(false);
@@ -973,9 +983,9 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
         </DialogContent>
       </Dialog>
 
-      <div className="grid md:grid-cols-5 gap-6 auto-rows-fr">
+      <div className="grid items-start md:grid-cols-5 gap-6">
         {/* Left: Biomass calculation workflow */}
-        <Card className="md:col-span-3 p-5 h-full">
+        <Card className="md:col-span-3 self-start p-5">
           <h3 className="font-semibold text-slate-700 mb-4">
             Biomass Calculation
           </h3>
@@ -991,7 +1001,10 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
                 <input
                   type="checkbox"
                   checked={useVideo}
-                  onChange={(e) => setUseVideo(e.target.checked)}
+                  onChange={(e) => {
+                    setUseVideo(e.target.checked);
+                    if (e.target.checked) { setVideoResult(null); setResult(null); }
+                  }}
                   className="rounded"
                 />
                 <span className="text-sm font-medium text-slate-700">
@@ -1014,9 +1027,11 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
                   <input
                     type="file"
                     accept="video/*"
+                    onClick={() => { setVideoResult(null); setResult(null); }}
                     onChange={(e) => {
                       setUploadedFile(e.target.files?.[0] || null);
                       setVideoResult(null);
+                      setResult(null);
                     }}
                     className="w-full text-xs text-slate-500"
                   />
@@ -1044,7 +1059,7 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
                   <video
                     src={videoResult.processedUrl}
                     controls
-                    className="w-full rounded-lg bg-black"
+                    className="h-[300px] w-full rounded-lg bg-black object-contain sm:h-[360px]"
                   />
                   <p className="text-xs text-emerald-600">
                     Fish detected and marked with bounding boxes • Ready to calculate biomass
@@ -1076,6 +1091,7 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
               <div className="space-y-3">
                 {[
                   { label: "Species", value: result.species },
+                  { label: "Total Fish Stocked", value: result.fishCount.toLocaleString() },
                   { label: "Avg. Length", value: result.avgLength, unit: "cm" },
                   {
                     label: "Avg. Weight",
