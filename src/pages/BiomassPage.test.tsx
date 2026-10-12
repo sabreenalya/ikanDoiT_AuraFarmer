@@ -112,6 +112,8 @@ describe("BiomassPage batch management", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Start New Batch" }));
     const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("Harvest Weight (kg)"), { target: { value: "180" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Next: Batch Details" }));
     const newStockingDate = isoDaysAgo(2);
     fireEvent.change(within(dialog).getByLabelText("Stocking Date"), { target: { value: newStockingDate } });
     fireEvent.change(within(dialog).getByLabelText("Total Fish Stocked"), { target: { value: "500" } });
@@ -123,7 +125,8 @@ describe("BiomassPage batch management", () => {
       expect(saved["pond-1"].active.stockingDate).toBe(newStockingDate);
       expect(saved["pond-1"].active.stockedFishCount).toBe(500);
       expect(saved["pond-1"].history).toHaveLength(1);
-      expect(saved["pond-1"].history[0].status).toBe("Previous");
+      expect(saved["pond-1"].history[0].status).toBe("Harvested");
+      expect(saved["pond-1"].history[0].harvestWeightKg).toBe(180);
       expect(saved["pond-1"].history[0].biomassRecords).toHaveLength(1);
       expect(saved["pond-2"].active.id).toBe("pond-2-batch-1");
       expect(saved["pond-2"].active.targetMinWeightG).toBe(450);
