@@ -13,26 +13,26 @@ import { useBiomass, useFeedingSchedule, useFeedingLogs, useFeedPrice, useAlerts
 
 import { FeedingChecklist, AlertsPanel, BiomassStatusCard } from "./components";
 
-import { calcCostSummary, analyzeFeedingInsights, getFeedPercentage } from "./utils/feedingUtils";
+import { calcCostSummary, getFeedPercentage } from "./utils/feedingUtils";
 import type { FeedingChecklistItem, FishResponse, FeedingLog, FeedingAlert } from "./types/feeding.types";
 
 interface FeedingPageProps {
   user: { id: string; email?: string } | null;
   params: { Temp: number; [key: string]: number };
   pondId?: string;
+  latestBiomass?: {
+    id: string;
+    pondId: string;
+    biomass: number;
+    avgWeight: number;
+    fishCount: number;
+    timestamp: string;
+  } | null;
 }
 
 const MEAL_OPTIONS = [2, 3, 4] as const;
 
-const INSIGHT_STYLE = {
-  overfeeding: "bg-red-50 border-red-200 text-red-700",
-  drop:        "bg-amber-50 border-amber-200 text-amber-700",
-  trend_up:    "bg-blue-50 border-blue-200 text-blue-700",
-  trend_down:  "bg-amber-50 border-amber-200 text-amber-700",
-  normal:      "bg-emerald-50 border-emerald-200 text-emerald-700",
-};
-
-export default function FeedingPage({ user, params, pondId }: FeedingPageProps) {
+export default function FeedingPage({ user, params, pondId, latestBiomass }: FeedingPageProps) {
   const [mealsPerDay, setMealsPerDay] = useState<2 | 3 | 4>(3);
   const [activeChecklistItem, setActiveChecklistItem] = useState<FeedingChecklistItem | null>(null);
 
@@ -42,16 +42,25 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
     useFeedingLogs(pondId);
   const { pricePerKg, setPricePerKg } = useFeedPrice(user?.id);
 
-  const biomassKg = biomass?.biomass_kg ?? 250;
-  const avgWeightG = 143.9;
-  const avgWeightKg = avgWeightG / 1000;
-  const fishCount = 500;
+  const latestMatchesPond = latestBiomass && (!pondId || String(latestBiomass.pondId) === String(pondId));
+  const currentBiomass = latestMatchesPond
+    ? {
+        id: latestBiomass.id,
+        pond_id: latestBiomass.pondId,
+        biomass_kg: latestBiomass.biomass,
+        avg_weight_kg: latestBiomass.avgWeight,
+        fish_count: latestBiomass.fishCount,
+        timestamp: latestBiomass.timestamp,
+      }
+    : biomass;
+  const biomassKg = currentBiomass?.biomass_kg ?? 250;
+  const avgWeightKg = currentBiomass?.avg_weight_kg ?? 0.1439;
+  const avgWeightG = avgWeightKg * 1000;
+  const fishCount = currentBiomass?.fish_count ?? 500;
   const growthRateGPerDay = 1.1;
   const tempC = params.Temp ?? 28;
 
-  const biomassForDisplay = biomass
-    ? { ...biomass, fish_count: fishCount, avg_weight_kg: avgWeightKg }
-    : biomass;
+  const biomassForDisplay = currentBiomass;
 
   const feedingRate = getFeedPercentage(avgWeightKg);
 
@@ -68,7 +77,31 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
     const monthlyFeedKg = effectivePct * (DAYS * biomassKg + dailyBiomassGainKg * triangular);
     return parseFloat((monthlyFeedKg * pricePerKg).toFixed(2));
   }, [biomassKg, dailyTotal, fishCount, growthRateGPerDay, pricePerKg]);
-  const insight = useMemo(() => analyzeFeedingInsights(historyLogs), [historyLogs]);
+  const sevenDayChartData = useMemo(() => {
+    const totalsByDate = new Map(historyLogs.map((entry) => [entry.date, entry.feed_amount]));
+    const estimatedDailyFeedKg = biomassKg * feedingRate;
+    const dailyVariation = [0.88, 0.93, 0.90, 0.96, 0.92, 0.98];
+    const days = [];
+    for (let daysAgo = 6; daysAgo >= 0; daysAgo -= 1) {
+      const date = new Date();
+      date.setHours(12, 0, 0, 0);
+      date.setDate(date.getDate() - daysAgo);
+      const dateKey = date.toISOString().slice(0, 10);
+      const hasRecordedFeed = totalsByDate.has(dateKey);
+      const isEstimate = daysAgo > 0 && !hasRecordedFeed;
+      const variationIndex = 6 - daysAgo;
+      days.push({
+        date: dateKey,
+        feed_amount: hasRecordedFeed
+          ? totalsByDate.get(dateKey)!
+          : isEstimate
+            ? Number((estimatedDailyFeedKg * dailyVariation[variationIndex]).toFixed(2))
+            : 0,
+        isEstimate,
+      });
+    }
+    return days;
+  }, [historyLogs, biomassKg, feedingRate]);
 
   // biomass_records uses "timestamp" column (not "created_at")
   const biomassUpdatedAt = biomass
@@ -356,38 +389,43 @@ export default function FeedingPage({ user, params, pondId }: FeedingPageProps) 
 
       {/* 7-day history chart */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-2">
           <h3
             className="font-semibold text-slate-700 text-sm"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             7-Day Feed History
           </h3>
-          <span className="text-xs text-slate-400">kg/day</span>
+          <span className="rounded-full bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500">kg/day</span>
         </div>
 
-        <div className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg border mb-4 ${INSIGHT_STYLE[insight.type]}`}>
-          {insight.message}
-        </div>
-
-        <ResponsiveContainer width="100%" height={180}>
+        <ResponsiveContainer width="100%" height={210}>
           <BarChart
-            data={[...historyLogs].reverse()}
-            margin={{ top: 0, right: 10, bottom: 0, left: -10 }}
+            data={sevenDayChartData}
+            margin={{ top: 8, right: 12, bottom: 0, left: 0 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+            <defs>
+              <linearGradient id="feedHistoryBar" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#1762c4" />
+                <stop offset="100%" stopColor="#0B3D91" />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 4" stroke="#eaf0f7" vertical={false} />
             <XAxis
               dataKey="date"
               tick={{ fontSize: 10, fill: "#94a3b8" }}
               tickLine={false}
+              axisLine={false}
+              tickMargin={9}
               tickFormatter={(v: string) => v.slice(5)}
             />
-            <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
+            <YAxis width={34} tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
             <Tooltip
               contentStyle={{ borderRadius: 12, border: "none", fontSize: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
               formatter={(v: number) => [`${v} kg`, "Feed given"]}
+              cursor={{ fill: "#f1f5f9", opacity: 0.65 }}
             />
-            <Bar dataKey="feed_amount" fill="#0B3D91" radius={[6, 6, 0, 0]} name="Feed (kg)" />
+            <Bar dataKey="feed_amount" fill="url(#feedHistoryBar)" barSize={52} radius={[7, 7, 0, 0]} name="Feed (kg)" />
           </BarChart>
         </ResponsiveContainer>
       </div>

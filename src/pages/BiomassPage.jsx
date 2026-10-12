@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend,
   ReferenceArea,
+  ReferenceLine,
 } from "recharts";
 import { CalendarDays } from "lucide-react";
 import {
@@ -284,15 +285,19 @@ const defaultBatch = ({ id, pondId, stockingDate, species = "Red Tilapia" }) => 
 });
 
 const createPond2SampleRecords = (batch) => {
-  const stockedAt = isValidISODate(batch.stockingDate)
-    ? new Date(`${batch.stockingDate}T12:00:00`)
-    : new Date(Date.now() - 30 * 86400000);
-  // Keep the final weekly point just below the current prototype estimate (~144 g).
-  // This gives a steady upward history that joins smoothly to today's estimate.
-  const weightsG = [95, 112, 129, 140];
-  return weightsG.map((weightG, index) => {
-    const recordedAt = new Date(stockedAt);
-    recordedAt.setDate(recordedAt.getDate() + (index + 1) * 7);
+  // Demo points rise weekly toward the full-size FishVideo1 estimate.
+  const sampleId = (record) => record.isSample || String(record.id || "").startsWith("pond-2-sample-");
+  const actualWeights = (batch.biomassRecords || [])
+    .filter((record) => !sampleId(record) && Number(record.avgLength) === 20 && Number(record.avgWeight) > 0 && Number.isFinite(Number(record.avgWeight)))
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  const latestActualWeight = actualWeights[actualWeights.length - 1];
+  const targetWeightG = latestActualWeight ? Number(latestActualWeight.avgWeight) * 1000 : calculateSpeciesWeight(20, batch.species || "Red Tilapia") * 1000;
+  const growthFactors = [0.62, 0.74, 0.87, 1];
+  return growthFactors.map((factor, index) => {
+    const weightG = Number((targetWeightG * factor).toFixed(1));
+    const recordedAt = new Date();
+    recordedAt.setHours(12, 0, 0, 0);
+    recordedAt.setDate(recordedAt.getDate() - (growthFactors.length - index - 1) * 7);
     const id = `pond-2-sample-${batch.id}-${index + 1}`;
     const avgWeight = weightG / 1000;
     return {
@@ -328,7 +333,7 @@ const defaultPond2Batch = () => {
     timestamp: record.timestamp,
     weightG: Number((record.avgWeight * 1000).toFixed(2)),
   }));
-  batch.sampleDataVersion = 3;
+  batch.sampleDataVersion = 5;
   return batch;
 };
 
@@ -380,6 +385,7 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
   const [batchHistoryVisible, setBatchHistoryVisible] = useState(true);
   const [batchStoreReady, setBatchStoreReady] = useState(false);
   const [today, setToday] = useState(() => new Date());
+  const [sampleDateKey, setSampleDateKey] = useState(() => localDateString(new Date()));
 
   useEffect(() => {
     try {
@@ -404,13 +410,16 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
       else if (pond2Id === "pond-2" && migrated[pond2Id].active.id === "batch-pond-2-initial" && !(migrated[pond2Id].active.biomassRecords || []).length && !(migrated[pond2Id].active.weightMeasurements || []).length) {
         const seededBatch = defaultPond2Batch();
         const existingBatch = migrated[pond2Id].active;
-        migrated[pond2Id] = { ...migrated[pond2Id], active: { ...seededBatch, ...existingBatch, pondId: pond2Id, stockingDate: seededBatch.stockingDate, sampleDataVersion: 3,
+        migrated[pond2Id] = { ...migrated[pond2Id], active: { ...seededBatch, ...existingBatch, pondId: pond2Id, stockingDate: seededBatch.stockingDate, sampleDataVersion: 5,
           biomassRecords: seededBatch.biomassRecords.map((record) => ({ ...record, species: existingBatch.species || seededBatch.species })),
           weightMeasurements: seededBatch.weightMeasurements,
         } };
       }
       const pond2Active = migrated[pond2Id]?.active;
-      if (pond2Active?.id === "batch-pond-2-initial" && (pond2Active.sampleDataVersion || 0) < 3) {
+      const samplePointIds = (pond2Active?.biomassRecords || []).filter((record) => record.isSample || String(record.id || "").startsWith("pond-2-sample-"));
+      const sampleDates = samplePointIds.map((record) => localDateString(new Date(record.timestamp))).sort();
+      const latestSampleDate = sampleDates[sampleDates.length - 1];
+      if (pond2Active?.id === "batch-pond-2-initial" && ((pond2Active.sampleDataVersion || 0) < 5 || latestSampleDate !== localDateString(new Date()))) {
         const sampleBase = pond2Active.id === "batch-pond-2-initial"
           ? { ...pond2Active, stockingDate: defaultPond2Batch().stockingDate }
           : pond2Active;
@@ -422,7 +431,7 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
           ...migrated[pond2Id],
           active: {
             ...sampleBase,
-            sampleDataVersion: 3,
+            sampleDataVersion: 5,
             biomassRecords: [...actualRecords, ...sampleRecords],
             weightMeasurements: [
               ...actualMeasurements,
@@ -445,7 +454,14 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
   }, [batchStorageKey, availablePonds]);
 
   useEffect(() => {
-    const interval = window.setInterval(() => setToday(new Date()), 60000);
+    const interval = window.setInterval(() => {
+      const now = new Date();
+      setToday(now);
+      setSampleDateKey((currentKey) => {
+        const nextKey = localDateString(now);
+        return nextKey === currentKey ? currentKey : nextKey;
+      });
+    }, 60000);
     return () => window.clearInterval(interval);
   }, []);
 
@@ -491,6 +507,30 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
       return false;
     }
   }
+
+  useEffect(() => {
+    if (!batchStoreReady) return;
+    const pondId = availablePonds[1]?.id || "pond-2";
+    const pondData = batchStore[pondId];
+    const active = pondData?.active;
+    if (active?.id !== "batch-pond-2-initial") return;
+    const sampleRecords = createPond2SampleRecords(active);
+    const isSeededPoint = (record) => record.isSample || String(record.id || "").startsWith("pond-2-sample-");
+    const existingSamples = (active.biomassRecords || []).filter(isSeededPoint);
+    if (existingSamples.length && (active.sampleDataVersion || 0) >= 5 && localDateString(new Date(existingSamples[existingSamples.length - 1].timestamp)) === sampleDateKey) return;
+    const actualRecords = (active.biomassRecords || []).filter((record) => !isSeededPoint(record));
+    const actualMeasurements = (active.weightMeasurements || []).filter((record) => !isSeededPoint(record));
+    const refreshedBatch = {
+      ...active,
+      sampleDataVersion: 5,
+      biomassRecords: [...actualRecords, ...sampleRecords],
+      weightMeasurements: [
+        ...actualMeasurements,
+        ...sampleRecords.map((record) => ({ id: record.id, batchId: active.id, pondId, timestamp: record.timestamp, weightG: Number((record.avgWeight * 1000).toFixed(2)) })),
+      ],
+    };
+    persistBatchStore({ ...batchStore, [pondId]: { ...pondData, active: refreshedBatch } });
+  }, [sampleDateKey, batchStoreReady, batchStore, availablePonds]);
 
   function saveBatchDetails() {
     setBatchNotice("");
@@ -653,10 +693,24 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
     }
     const measurement = { id: recordId, batchId: activeBatch.id, pondId: selectedPond.id, timestamp, weightG: Number((weight * 1000).toFixed(2)) };
     const currentPondData = batchStore[selectedPond.id] || { active: activeBatch, history: [] };
+    const todayKey = localDateString(new Date(timestamp));
+    const todayDemoPoint = activeBatch.id === "batch-pond-2-initial"
+      ? (activeBatch.biomassRecords || []).find((record) => String(record.id || "").startsWith("pond-2-sample-") && localDateString(new Date(record.timestamp)) === todayKey)
+      : null;
     const updatedBatch = {
       ...activeBatch,
-      biomassRecords: [...(activeBatch.biomassRecords || []), r],
-      weightMeasurements: [...(activeBatch.weightMeasurements || []), measurement],
+      biomassRecords: [
+        ...(activeBatch.biomassRecords || []).map((record) => record.id === todayDemoPoint?.id
+          ? { ...record, avgWeight: weight, biomass: Math.round(weight * fishCount), fishCount, timestamp }
+          : record),
+        r,
+      ],
+      weightMeasurements: [
+        ...(activeBatch.weightMeasurements || []).map((record) => record.id === todayDemoPoint?.id
+          ? { ...record, timestamp, weightG: Number((weight * 1000).toFixed(2)) }
+          : record),
+        measurement,
+      ],
     };
     const updated = { ...batchStore, [selectedPond.id]: { ...currentPondData, active: updatedBatch } };
     persistBatchStore(updated);
@@ -708,7 +762,7 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
       .map((record) => ({ id: record.id, timestamp: record.timestamp, weightG: Number(((record.avgWeight || 0) * 1000).toFixed(2)), isSample: record.isSample }));
     const measurementsById = new Map([...batchMeasurements, ...legacyBatchRecords, ...appBatchRecords].map((record) => [record.id || record.timestamp, record]));
     const actualRecords = Array.from(measurementsById.values())
-      .map((record) => ({ date: new Date(record.timestamp), weightG: Number(record.weightG), isSample: record.isSample === true }))
+      .map((record) => ({ date: new Date(record.timestamp), weightG: Number(record.weightG), isSample: record.isSample === true || String(record.id || "").startsWith("pond-2-sample-") }))
       .filter((p) => Number.isFinite(p.weightG) && !Number.isNaN(p.date.getTime()))
       .sort((a, b) => a.date.getTime() - b.date.getTime());
 
@@ -721,7 +775,7 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
     });
     const growthRecords = Array.from(recordsByDay.entries()).map(([key, records]) => ({
       date: new Date(`${key}T12:00:00`),
-      weightG: records.reduce((sum, record) => sum + record.weightG, 0) / records.length,
+      weightG: records.find((record) => record.isSample)?.weightG ?? records.reduce((sum, record) => sum + record.weightG, 0) / records.length,
     })).sort((a, b) => a.date.getTime() - b.date.getTime());
     const dailyGainG = computeDailyGainG(growthRecords);
 
@@ -741,7 +795,8 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
     const actualByDate = new Map(growthRecords.map((p) => [formatDateKey(p.date), p.weightG]));
     const simByDate = new Map(simPoints.map((p) => [formatDateKey(p.date), p.weightG]));
     const stockingDateKey = isValidISODate(activeBatch?.stockingDate) ? activeBatch.stockingDate : null;
-    const allDates = Array.from(new Set([...actualByDate.keys(), ...simByDate.keys(), ...(stockingDateKey ? [stockingDateKey] : [])])).sort();
+    const todayKey = localDateString(today);
+    const allDates = Array.from(new Set([...actualByDate.keys(), ...simByDate.keys(), ...(stockingDateKey ? [stockingDateKey] : []), todayKey])).sort();
 
     const chartData = allDates.map((key) => ({
       date: key,
@@ -777,7 +832,7 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
       targetMinG,
       targetMaxG,
     };
-  }, [activeBatch, history, targetMinG, targetMaxG]);
+  }, [activeBatch, history, targetMinG, targetMaxG, today]);
 
   const currentBatchRecords = useMemo(() => {
     if (!activeBatch) return [];
@@ -1231,7 +1286,7 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
           <LineChart
             key={`${selectedPond?.id}:${activeBatch?.id || "none"}`}
             data={weightTimeSeries.chartData}
-            margin={{ top: 10, right: 10, bottom: 10, left: 0 }}
+            margin={{ top: 10, right: 40, bottom: 10, left: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
             <ReferenceArea y1={weightTimeSeries.targetMinG} y2={weightTimeSeries.targetMaxG} fill="#22c55e" fillOpacity={0.12}
@@ -1241,6 +1296,14 @@ export default function BiomassPage({ user, setLatestBiomass, setBiomassHistory,
               tick={{ fontSize: 10, fill: "#94a3b8" }}
               tickLine={false}
               minTickGap={20}
+              tickFormatter={(value) => value.slice(5)}
+            />
+            <ReferenceLine
+              x={localDateString(today)}
+              stroke="#2563eb"
+              strokeDasharray="4 4"
+              strokeWidth={1.5}
+              label={{ value: "Today", position: "insideTop", fill: "#2563eb", fontSize: 10 }}
             />
             <YAxis
               label={{

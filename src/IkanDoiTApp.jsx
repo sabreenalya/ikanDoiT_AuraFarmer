@@ -914,7 +914,14 @@ export default function App() {
         onNavigateToFeeding={() => setActivePage("feeding")}
       />
     ),
-    feeding: <FeedingPage user={user} latestBiomass={latestBiomass} params={params} />,
+    feeding: (
+      <FeedingPage
+        user={user}
+        latestBiomass={latestBiomass}
+        params={params}
+        pondId={String(devices[Math.min(activeDeviceIdx, 1)]?.id ?? `pond-${Math.min(activeDeviceIdx, 1) + 1}`)}
+      />
+    ),
     product: <ProductPage onBuyNow={handleBuyNow} onBack={handleBackToWater} />,
     checkout: <CheckoutPage cart={selectedKit} onBack={() => setActivePage("product")} onComplete={handlePlaceOrder} />,
     "order-success": <OrderSuccessPage order={orderInfo} onGoToDashboard={handleGoToOrderTracking} />,

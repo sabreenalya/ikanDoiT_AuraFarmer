@@ -13,7 +13,7 @@ interface UseBiomassResult {
   refetch: () => void;
 }
 
-const HARDCODED_FISH_COUNT = 100;
+const DEMO_FISH_COUNT = 500;
 
 export function useBiomass(pondId?: string): UseBiomassResult {
   const [biomass, setBiomass] = useState<BiomassRecord | null>(null);
@@ -45,22 +45,22 @@ export function useBiomass(pondId?: string): UseBiomassResult {
             id: "mock-biomass",
             pond_id: pondId ?? "pond-1",
             biomass_kg: 250,
-            avg_weight_kg: 0.18,
-            fish_count: HARDCODED_FISH_COUNT,
+            avg_weight_kg: 0.1439,
+            fish_count: DEMO_FISH_COUNT,
             timestamp: new Date().toISOString(),
           });
           return;
         }
 
-        setBiomass({ ...row, fish_count: HARDCODED_FISH_COUNT } as BiomassRecord);
+        setBiomass({ ...row, fish_count: row.fish_count ?? DEMO_FISH_COUNT } as BiomassRecord);
       } catch (e: any) {
         // Demo fallback when Supabase is not configured
         setBiomass({
           id: "mock-biomass",
           pond_id: pondId ?? "pond-1",
           biomass_kg: 250,
-          avg_weight_kg: 0.18,
-          fish_count: HARDCODED_FISH_COUNT,
+          avg_weight_kg: 0.1439,
+          fish_count: DEMO_FISH_COUNT,
           timestamp: new Date(Date.now() - 2 * 3_600_000).toISOString(),
         });
         setError(null); // swallow in demo mode

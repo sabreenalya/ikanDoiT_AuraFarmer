@@ -45,13 +45,13 @@ export default function BiomassStatusCard({
                 {biomass.biomass_kg.toFixed(1)}{" "}
                 <span className="text-base font-normal text-slate-500">kg</span>
               </p>
-              <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <span className="text-xs text-slate-500">
                   {biomass.fish_count?.toLocaleString()} fish
                 </span>
                 <span className="text-xs text-slate-400">·</span>
                 <span className="text-xs text-slate-500">
-                  avg {((biomass.avg_weight_kg || 0.18) * 1000).toFixed(0)}g/fish
+                  avg {((biomass.avg_weight_kg || 0.1439) * 1000).toFixed(2)}g/fish
                 </span>
               </div>
             </>
