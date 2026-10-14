@@ -23,9 +23,6 @@ const PARAM_CONFIG = [
   { key: "DO", label: "DO", name: "DO (mg/L)", color: "#0B3D91" },
   { key: "pH", label: "pH", name: "pH", color: "#8b5cf6" },
   { key: "Temp", label: "Temp", name: "Temp (°C)", color: "#f59e0b" },
-  { key: "NH3", label: "NH3", name: "NH₃ (mg/L)", color: "#ef4444" },
-  { key: "NO3", label: "NO3", name: "NO₃ (mg/L)", color: "#10b981" },
-  { key: "Salinity", label: "Salinity", name: "Salinity (ppt)", color: "#06b6d4" },
 ];
 
 export default function DashboardPage({ user, params, setParams }) {
@@ -39,9 +36,6 @@ export default function DashboardPage({ user, params, setParams }) {
         DO: MOCK_READINGS.DO?.[i]?.value ?? null,
         pH: MOCK_READINGS.pH?.[i]?.value ?? null,
         Temp: MOCK_READINGS.Temp?.[i]?.value ?? null,
-        NH3: MOCK_READINGS.NH3?.[i]?.value ?? null,
-        NO3: MOCK_READINGS.NO3?.[i]?.value ?? null,
-        Salinity: MOCK_READINGS.Salinity?.[i]?.value ?? null,
       })),
     []
   );
@@ -62,14 +56,11 @@ export default function DashboardPage({ user, params, setParams }) {
 
       <AlertBanner alerts={alerts} />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {[
           { label: "Dissolved O₂", param: "DO", unit: "mg/L" },
           { label: "pH Level", param: "pH", unit: "" },
           { label: "Temperature", param: "Temp", unit: "°C" },
-          { label: "Ammonia (NH₃)", param: "NH3", unit: "mg/L" },
-          { label: "Nitrate (NO₃)", param: "NO3", unit: "mg/L" },
-          { label: "Salinity", param: "Salinity", unit: "ppt" },
         ].map((s) => (
           <StatCard
             key={s.param}
@@ -112,9 +103,6 @@ export default function DashboardPage({ user, params, setParams }) {
               ))}
             </ToggleGroup>
           </div>
-          <p className="text-[11px] text-slate-400">
-            Water Basics: DO, pH, Temp · Chemical Levels: NH3, NO3, Salinity
-          </p>
         </div>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart

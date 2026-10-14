@@ -212,6 +212,7 @@ const PARAM_INFO = [
   { key:"NO3", label:"Nitrate", unit:"mg/L", ideal:"< 15 mg/L", color:"#10b981", tooltip:"Nitrate builds up slowly from ammonia breakdown. Less harmful than ammonia but causes stress at high levels.", idealExplain:"Keep below 15 mg/L. Change 20–30% of water regularly. Water plants help absorb nitrate naturally." },
   { key:"Salinity", label:"Salinity", unit:"ppt", ideal:"0–10 ppt", color:"#06b6d4", tooltip:"Salinity measures salt content. Freshwater fish need low salinity (0–5 ppt).", idealExplain:"Freshwater fish: keep 0–5 ppt. A little salt (1–3 ppt) helps fight disease. Above 10 ppt stresses freshwater fish." },
 ];
+const LIVE_READING_PARAMS = PARAM_INFO.filter(({ key }) => ["DO", "pH", "Temp"].includes(key));
 
 // ─── Pond status helper ───────────────────────────────────────────────────────
 const getPondStatusInfo = (pondAlerts) => {
@@ -387,7 +388,7 @@ export default function WaterPage({
                 ))}
               </div>
             </div>
-            <button onClick={onBuySensor} className="px-10 py-4 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1565C0] text-white font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all inline-flex items-center gap-3">
+            <button type="button" className="px-10 py-4 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1565C0] text-white font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all inline-flex items-center gap-3">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
               Buy ikanDoiT Sensor Kit
             </button>
@@ -624,10 +625,10 @@ export default function WaterPage({
       <div>
         <div className="flex items-center gap-1 mb-3">
           <h3 className="font-bold text-slate-800" style={{ fontFamily:"'Plus Jakarta Sans', sans-serif" }}>Live Readings</h3>
-          <InfoTooltip text="These 6 cards show your current water measurements. Green = good, Yellow/Orange = needs attention, Red = danger. Tap the green Ideal pill on each card for a simple explanation." />
+          <InfoTooltip text="These cards show your current water measurements. Green = good, Yellow/Orange = needs attention, Red = danger. Tap the green Ideal pill on each card for a simple explanation." />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {PARAM_INFO.map((p) => {
+          {LIVE_READING_PARAMS.map((p) => {
             const status = getParamStatus(p.key, params[p.key]);
             const c = statusColor[status];
             return (
@@ -695,7 +696,7 @@ export default function WaterPage({
               <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">Parameter</label>
               <select value={selectedParameter} onChange={e => setSelectedParameter(e.target.value)}
                 className="w-full py-2 px-3 rounded-lg border border-slate-300 text-sm font-semibold focus:border-[#0B3D91] focus:ring-2 focus:ring-blue-100 outline-none">
-                {PARAM_INFO.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
+                {LIVE_READING_PARAMS.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
               </select>
             </div>
           </div>
