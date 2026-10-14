@@ -340,7 +340,7 @@ function LandingPage({ onCTA }) {
 
       {/* How it Works Section */}
       <section id="how-it-works" className="relative z-10 py-24 md:py-32 bg-slate-50">
-        <div className="max-w-6xl mx-auto px-6 md:px-12">
+        <div className="max-w-7xl mx-auto px-6 md:px-12">
           <div className="text-center mb-20 fade-in">
             <h2
               className="text-4xl md:text-5xl font-bold text-slate-900 mb-4"
@@ -540,13 +540,13 @@ function LandingPage({ onCTA }) {
 
       {/* Pricing Section */}
       <section id="pricing" className="relative z-10 py-24 md:py-32 bg-slate-50">
-        <div className="max-w-6xl mx-auto px-6 md:px-12">
+        <div className="max-w-7xl mx-auto px-6 md:px-12">
 
           {/* Header */}
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              Simple, Transparent Pricing
+              Subscription Plans (Monthly)
             </h2>
 
             <p className="text-lg text-slate-600">
@@ -555,7 +555,7 @@ function LandingPage({ onCTA }) {
           </div>
 
           {/* Cards */}
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
 
             {/* ───────── FREE ───────── */}
             <div className="bg-white rounded-2xl p-8 border border-slate-200 flex flex-col transition-all duration-300 hover:-translate-y-2 hover:shadow-lg">
@@ -572,8 +572,6 @@ function LandingPage({ onCTA }) {
                     month
                   </p>
                 </div>
-                <p className="text-sm text-slate-500 mb-6">For getting started</p>
-
                 <ul className="space-y-3 text-sm mb-8">
                   <li className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -586,22 +584,9 @@ function LandingPage({ onCTA }) {
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Feeding recommendations
-                  </li>
-
-                  <li className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
                     20 credits / month
                   </li>
 
-                  <li className="flex items-center gap-3 text-slate-400">
-                    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Sensor kits included
-                  </li>
                 </ul>
               </div>
 
@@ -621,21 +606,19 @@ function LandingPage({ onCTA }) {
 
                 <div className="flex items-end gap-3 mb-3">
                   <span className="text-sm font-semibold text-slate-500">RM</span>
-                  <h3 className="text-5xl font-bold text-slate-900 leading-none">499</h3>
+                  <h3 className="text-5xl font-bold text-slate-900 leading-none">899</h3>
                   <p className="text-[11px] text-slate-500 leading-tight pb-1">
                     <span className="font-semibold">MYR /</span>
                     <br />
                     month 
                   </p>
                 </div>
-                <p className="text-sm text-slate-500 mb-6">Upgrade your aquaculture management</p>
-
                 <ul className="space-y-3 text-sm mb-8">
                   <li className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    5 sensor kits included
+                    5 sensor kits (5 ponds)
                   </li>
 
                   <li className="flex items-center gap-3">
@@ -649,7 +632,7 @@ function LandingPage({ onCTA }) {
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Feeding recommendations
+                    Custom alerts by app, SMS &amp; WhatsApp
                   </li>
 
                   <li className="flex items-center gap-3">
@@ -663,11 +646,13 @@ function LandingPage({ onCTA }) {
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Enhanced computer vision model
+                    Installation, monthly maintenance &amp; calibration included
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    4G gateway &amp; data included
                   </li>
                 </ul>
-
-                <p className="text-xs text-emerald-600 font-medium mb-6">Ideal for small-to-mid ponds</p>
               </div>
 
               <button
@@ -691,21 +676,19 @@ function LandingPage({ onCTA }) {
 
                 <div className="flex items-end gap-3 mb-3">
                   <span className="text-sm font-semibold text-slate-500">RM</span>
-                  <h3 className="text-5xl font-bold text-slate-900 leading-none">899</h3>
+                  <h3 className="text-5xl font-bold text-slate-900 leading-none">1,699</h3>
                   <p className="text-[11px] text-slate-500 leading-tight pb-1">
                     <span className="font-semibold">MYR /</span>
                     <br />
                     month 
                   </p>
                 </div>
-                <p className="text-sm text-slate-500 mb-6">Maximize your aquaculture performance</p>
-
                 <ul className="space-y-3 text-sm mb-8">
                   <li className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    10 sensor kits included
+                    10 sensor kits (10 ponds)
                   </li>
 
                   <li className="flex items-center gap-3">
@@ -719,7 +702,7 @@ function LandingPage({ onCTA }) {
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Feeding recommendations
+                    Pond-by-pond comparison
                   </li>
 
                   <li className="flex items-center gap-3">
@@ -733,13 +716,25 @@ function LandingPage({ onCTA }) {
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Best computer vision model
+                    Growth &amp; feed-efficiency reports
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    Data export
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    Priority sensor replacement within 24 hours
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    Installation, monthly maintenance &amp; calibration included
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    4G gateway &amp; data included
                   </li>
                 </ul>
-
-                <p className="text-xs text-blue-600 font-medium mb-6">
-                  Best for large scale farms
-                </p>
               </div>
 
               <button
@@ -748,6 +743,25 @@ function LandingPage({ onCTA }) {
               >
                 Buy Premium
               </button>
+            </div>
+
+            {/* Additional sensor kit */}
+            <div className="bg-white rounded-2xl p-8 border border-slate-200 flex flex-col transition-all duration-300 hover:-translate-y-2 hover:shadow-lg">
+              <div>
+                <p className="text-sm font-medium text-slate-500 mb-3">Additional Sensor Kit</p>
+                <p className="text-xs text-slate-500 mb-4">Optional Purchase</p>
+                <div className="mb-6">
+                  <span className="text-sm font-semibold text-slate-500">RM</span>
+                  <h3 className="text-5xl font-bold text-slate-900 leading-none inline ml-2">2,999</h3>
+                  <p className="text-sm text-slate-500 mt-2">per kit</p>
+                </div>
+                <ul className="space-y-3 text-sm mb-8">
+                  <li className="flex items-center gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Sensors included: DO, Temp, pH</li>
+                  <li className="flex items-center gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Waterproof enclosure + power supply included</li>
+                  <li className="flex items-center gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} d="M5 13l4 4L19 7" /></svg>1-year manufacturer warranty</li>
+                </ul>
+              </div>
+              <button type="button" className="mt-auto w-full py-3.5 rounded-xl border border-slate-300 text-slate-700 font-medium">Optional Purchase</button>
             </div>
 
           </div>
